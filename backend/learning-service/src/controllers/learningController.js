@@ -77,15 +77,12 @@ exports.getReviewWords = async (req, res) => {
 };
 exports.getProfileStats = async (req, res) => {
     try {
-        // Lấy userId từ token (do middleware auth giải mã)
         const userId = req.user.id;
 
-        // 1. Đếm số từ vựng đã học (có trong bảng UserVocabulary)
         const wordsLearned = await prisma.userVocabulary.count({
             where: { userId: userId }
         });
 
-        // 2. Đếm số chủ đề đã hoàn thành
         const completedTopics = await prisma.userTopicProgress.count({
             where: {
                 userId: userId,
@@ -93,7 +90,6 @@ exports.getProfileStats = async (req, res) => {
             }
         });
 
-        // 3. Tính điểm trung bình bài test
         const testAttempts = await prisma.testAttempt.findMany({
             where: { userId: userId }
         });
@@ -104,12 +100,12 @@ exports.getProfileStats = async (req, res) => {
             avgScore = Math.round(totalScore / testAttempts.length);
         }
 
-        // Trả về dữ liệu
+
         res.json({
             wordsLearned,
             completedTopics,
             avgScore,
-            streak: 0 // Tạm thời để 0 (logic streak cần bảng riêng phức tạp hơn)
+            streak: 0 
         });
 
     } catch (err) {

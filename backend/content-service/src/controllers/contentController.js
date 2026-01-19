@@ -101,7 +101,7 @@ exports.updateVocabulary = async (req, res) => {
         });
         res.json(updated);
     } catch (err) { res.status(400).json({ error: err.message }); }
-};
+};  
 
 exports.deleteVocabulary = async (req, res) => {
     try {

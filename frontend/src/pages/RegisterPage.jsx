@@ -10,25 +10,22 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
-    const { login } = useAuth(); // 2. Lấy hàm login từ Context
+    const { login } = useAuth(); 
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        setError(''); // Reset lỗi cũ
+        setError('');
 
         try {
-            // 3. Gọi API Đăng ký (Gửi lên Server)
             await registerUser(fullName, email, password);
 
-            // 4. Tự động Đăng nhập luôn bằng Context
-            // Hàm này sẽ tự lấy Token, lưu LocalStorage và cập nhật Navbar
+
             await login(email, password);
 
             alert("Đăng ký thành công! Chào mừng " + fullName);
-            navigate('/'); // Chuyển về trang chủ ngay lập tức
+            navigate('/'); 
 
         } catch (err) {
-            // Xử lý lỗi (ví dụ: Email đã tồn tại)
             setError(err.response?.data?.message || "Đăng ký thất bại. Email có thể đã tồn tại.");
         }
     };
