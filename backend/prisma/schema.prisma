@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== AUTH ====================
+model User {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  password String
+  fullName String?
+  role     String  @default("USER")
+}
+
+// ==================== CONTENT ====================
+model Topic {
+  id           Int          @id @default(autoincrement())
+  name         String
+  vocabularies Vocabulary[]
+  tests        Test[]
+}
+
+model Vocabulary {
+  id              Int     @id @default(autoincrement())
+  word            String
+  ipa             String?
+  audioUrl        String?
+  imageUrl        String?
+  meaning         String
+  exampleSentence String?
+  exampleMeaning  String?
+  topicId         Int
+  topic           Topic   @relation(fields: [topicId], references: [id])
+}
+
+model Test {
+  id        Int        @id @default(autoincrement())
+  topicId   Int
+  topic     Topic      @relation(fields: [topicId], references: [id])
+  questions Question[]
+  maxScore  Int        @default(100)
+}
+
+model Question {
+  id             Int     @id @default(autoincrement())
+  content        String
+  type           String
+  answers        Json
+  correctAnswer  String
+  difficulty     Int     @default(1)
+  relatedVocabId Int?
+  testId         Int
+  test           Test    @relation(fields: [testId], references: [id])
+}
+
+// ==================== LEARNING ====================
+model UserVocabulary {
+  id         Int     @id @default(autoincrement())
+  userId     Int
+  vocabId    Int
+  errorCount Int     @default(0)
+  isMarked   Boolean @default(false)
+
+  @@unique([userId, vocabId])
+}
+
+model UserTopicProgress {
+  id          Int     @id @default(autoincrement())
+  userId      Int
+  topicId     Int
+  isCompleted Boolean @default(false)
+
+  @@unique([userId, topicId])
+}
+
+model TestAttempt {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  testId           Int
+  score            Int
+  flaggedQuestions Json?
+  createdAt        DateTime @default(now())
+}
