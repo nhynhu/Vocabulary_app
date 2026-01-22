@@ -1,94 +1,114 @@
--- Tạo database
-CREATE DATABASE IF NOT EXISTS english_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 1. TẠO DATABASE (Thiết lập chuẩn UTF8MB4 ngay từ đầu để hỗ trợ Emoji/Tiếng Việt)
+CREATE DATABASE IF NOT EXISTS english_app 
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 USE english_app;
 
--- ==================== AUTH ====================
-CREATE TABLE IF NOT EXISTS `User` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `email` VARCHAR(191) NOT NULL,
-    `password` VARCHAR(191) NOT NULL,
-    `fullName` VARCHAR(191) NULL,
-    `role` VARCHAR(191) NOT NULL DEFAULT 'USER',
-    PRIMARY KEY (`id`),
-    UNIQUE INDEX `User_email_key` (`email`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- =======================================================
+-- GROUP 1: AUTHENTICATION (Người dùng)
+-- =======================================================
+CREATE TABLE User (
+    userId INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    fullName VARCHAR(255),
+    avt TEXT,
+    role ENUM('USER', 'ADMIN') DEFAULT 'USER',-- Dùng ENUM rõ ràng hơn VARCHAR
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
--- ==================== CONTENT ====================
-CREATE TABLE IF NOT EXISTS `Topic` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- =======================================================
+-- GROUP 2: CORE CONTENT (Nội dung học)
+-- =======================================================
+CREATE TABLE Topic (
+    topicId INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    imgURL TEXT -- Thêm ảnh cho topic cho đẹp app
+);
 
-CREATE TABLE IF NOT EXISTS `Vocabulary` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `word` VARCHAR(191) NOT NULL,
-    `ipa` VARCHAR(191) NULL,
-    `audioUrl` VARCHAR(191) NULL,
-    `imageUrl` VARCHAR(191) NULL,
-    `meaning` VARCHAR(191) NOT NULL,
-    `exampleSentence` TEXT NULL,
-    `exampleMeaning` TEXT NULL,
-    `topicId` INT NOT NULL,
-    PRIMARY KEY (`id`),
-    INDEX `Vocabulary_topicId_idx` (`topicId`),
-    CONSTRAINT `Vocabulary_topicId_fkey` FOREIGN KEY (`topicId`) REFERENCES `Topic`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE TABLE Vocabulary (
+    vocabId INT AUTO_INCREMENT PRIMARY KEY,
+    topicId INT NOT NULL,
+    word VARCHAR(255) NOT NULL,
+    meaning VARCHAR(255) NOT NULL,
+    ipa VARCHAR(100),
+    audioURL TEXT,
+    imgURL TEXT,
+    exampleSentence TEXT,
+    exampleMeaning TEXT,
+    
+    -- Khóa ngoại: Xóa Topic thì xóa luôn từ vựng thuộc về nó
+    FOREIGN KEY (topicId) REFERENCES Topic(topicId) ON DELETE CASCADE
+);
 
-CREATE TABLE IF NOT EXISTS `Test` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `topicId` INT NOT NULL,
-    `maxScore` INT NOT NULL DEFAULT 100,
-    PRIMARY KEY (`id`),
-    INDEX `Test_topicId_idx` (`topicId`),
-    CONSTRAINT `Test_topicId_fkey` FOREIGN KEY (`topicId`) REFERENCES `Topic`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- =======================================================
+-- GROUP 3: TESTING SYSTEM (Bài kiểm tra)
+-- =======================================================
+CREATE TABLE Test (
+    testId INT AUTO_INCREMENT PRIMARY KEY,
+    topicId INT NOT NULL,
+     imgURL TEXT,
+    title VARCHAR(255),      -- Tên bài test (VD: "Ôn tập Topic 1")
+    maxScore INT DEFAULT 100,
+    timeLimit INT DEFAULT 0, -- Thời gian làm bài (phút), 0 là không giới hạn
+    
+    FOREIGN KEY (topicId) REFERENCES Topic(topicId) ON DELETE CASCADE
+);
 
-CREATE TABLE IF NOT EXISTS `Question` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `content` VARCHAR(500) NOT NULL,
-    `type` VARCHAR(191) NOT NULL,
-    `answers` JSON NOT NULL,
-    `correctAnswer` VARCHAR(191) NOT NULL,
-    `difficulty` INT NOT NULL DEFAULT 1,
-    `relatedVocabId` INT NULL,
-    `testId` INT NOT NULL,
-    PRIMARY KEY (`id`),
-    INDEX `Question_testId_idx` (`testId`),
-    CONSTRAINT `Question_testId_fkey` FOREIGN KEY (`testId`) REFERENCES `Test`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE TABLE Question (
+    questionId INT AUTO_INCREMENT PRIMARY KEY,
+    testId INT NOT NULL,
+    relatedVocabId INT,      -- Câu hỏi này liên quan đến từ vựng nào (optional)
+    content TEXT NOT NULL,
+    type ENUM('CHOICE', 'FILL', 'MATCH') DEFAULT 'CHOICE',
+    answers JSON NOT NULL,   -- Lưu mảng đáp án: ["A", "B", "C", "D"]
+    correctAnswer VARCHAR(255) NOT NULL,
 
--- ==================== LEARNING ====================
-CREATE TABLE IF NOT EXISTS `UserVocabulary` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `userId` INT NOT NULL,
-    `vocabId` INT NOT NULL,
-    `errorCount` INT NOT NULL DEFAULT 0,
-    `isMarked` BOOLEAN NOT NULL DEFAULT false,
-    PRIMARY KEY (`id`),
-    UNIQUE INDEX `UserVocabulary_userId_vocabId_key` (`userId`, `vocabId`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    FOREIGN KEY (testId) REFERENCES Test(testId) ON DELETE CASCADE,
+    FOREIGN KEY (relatedVocabId) REFERENCES Vocabulary(vocabId) ON DELETE SET NULL
+);
 
-CREATE TABLE IF NOT EXISTS `UserTopicProgress` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `userId` INT NOT NULL,
-    `topicId` INT NOT NULL,
-    `isCompleted` BOOLEAN NOT NULL DEFAULT false,
-    PRIMARY KEY (`id`),
-    UNIQUE INDEX `UserTopicProgress_userId_topicId_key` (`userId`, `topicId`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- =======================================================
+-- GROUP 4: USER PROGRESS (Tiến độ học tập)
+-- =======================================================
+-- Lưu trạng thái từng từ vựng của user (Đã thuộc chưa, sai bao nhiêu lần)
+CREATE TABLE UserVocabulary (
+    userVocabId INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    vocabId INT NOT NULL,
+    isMarked BOOLEAN DEFAULT FALSE,-- Đánh dấu từ này để ôn tập sau
+    errorCount INT DEFAULT 0,         -- Số lần trả lời sai từ này
+    lastReviewedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Một user chỉ có 1 dòng dữ liệu cho 1 từ vựng
+    UNIQUE(userId, vocabId),
+    FOREIGN KEY (userId) REFERENCES User(userId) ON DELETE CASCADE,
+    FOREIGN KEY (vocabId) REFERENCES Vocabulary(vocabId) ON DELETE CASCADE
+);
 
-CREATE TABLE IF NOT EXISTS `TestAttempt` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `userId` INT NOT NULL,
-    `testId` INT NOT NULL,
-    `score` INT NOT NULL,
-    `flaggedQuestions` JSON NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Lưu tiến độ Topic (User đã học xong Topic nào)
+CREATE TABLE UserTopicProgress (
+    userId INT NOT NULL,
+    topicId INT NOT NULL,
+    completionPercentage INT DEFAULT 0, -- Phần trăm hoàn thành Topic
+    isCompleted BOOLEAN DEFAULT FALSE,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (userId, topicId), -- Khóa chính phức hợp
+    FOREIGN KEY (userId) REFERENCES User(userId) ON DELETE CASCADE,
+    FOREIGN KEY (topicId) REFERENCES Topic(topicId) ON DELETE CASCADE
+);
 
--- ==================== SAMPLE DATA (Optional) ====================
--- Tạo user admin mẫu (password: admin123)
--- INSERT INTO `User` (`email`, `password`, `fullName`, `role`) 
--- VALUES ('admin@example.com', '$2a$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'Admin', 'ADMIN');
+-- Lịch sử làm bài kiểm tra
+CREATE TABLE TestAttempt (
+    testAttemptId INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    testId INT NOT NULL,
+    score INT NOT NULL,
+    details JSON, -- Lưu chi tiết (câu nào đúng/sai) để hiện lại review
+    
+    FOREIGN KEY (userId) REFERENCES User(userId) ON DELETE CASCADE,
+    FOREIGN KEY (testId) REFERENCES Test(testId) ON DELETE CASCADE
+);

@@ -11,12 +11,16 @@ const HomeContent = () => {
     "/image/slide4.jpg"
   ];
 
+  const features = [
+    { title: 'Ghi nhớ lâu hơn', desc: 'Phương pháp lặp lại ngắt quãng giúp não bộ khắc sâu từ vựng.' },
+    { title: 'Vừa học vừa chơi', desc: 'Hệ thống bài tập dạng game giúp việc học không nhàm chán.' },
+    { title: 'Mọi lúc mọi nơi', desc: 'Học trên điện thoại, máy tính bảng hay laptop bất cứ khi nào bạn rảnh.' },
+  ];
+
   return (
     <>
-      {/* WRAPPER BAO QUANH TOÀN MÀN HÌNH */}
+      {/* HERO SECTION */}
       <div className="hero-wrapper">
-
-        {/* 1. CAROUSEL NỀN */}
         <div className="bg-carousel">
           <Carousel controls={false} indicators={false} interval={4000} fade pause={false}>
             {slides.map((img, idx) => (
@@ -27,55 +31,41 @@ const HomeContent = () => {
           </Carousel>
         </div>
 
-        {/* 2. LỚP PHỦ MÀU TỐI (Để chữ trắng nổi lên) */}
         <div className="overlay"></div>
 
-        {/* 3. NỘI DUNG CHÍNH (Chữ & Nút) */}
         <div className="hero-content">
           <h1 className="hero-title">
-            Chinh Phục <span style={{ color: '#AC3B61' }}>Tiếng Anh</span> <br />
+            Chinh Phục <span className="text-[#AC3B61]">Tiếng Anh</span> <br />
             Trong Tầm Tay
           </h1>
           <p className="hero-subtitle">
             Hơn 1000+ từ vựng, lộ trình học thông minh và hệ thống bài kiểm tra đa dạng. <br />
             Bắt đầu hành trình của bạn ngay hôm nay.
           </p>
-          <div className="d-flex justify-content-center gap-3">
+          <div className="flex justify-center gap-4">
             <button className="btn-glow" onClick={() => navigate('/topics')}>
-              Học Ngay 🚀
-            </button>
-            <button className="btn-glow" style={{ background: 'transparent', border: '2px solid white', boxShadow: 'none' }} onClick={() => navigate('/test')}>
-              Làm Bài Test
+              Học Ngay
             </button>
           </div>
         </div>
       </div>
 
-      {/* CÁC PHẦN DƯỚI (Features) - Nền trắng sạch sẽ */}
-      <Container className="py-5">
-        <div className="text-center mb-5 mt-4">
-          <h2 style={{ color: '#123C69', fontWeight: '800' }}>Tại sao chọn chúng tôi?</h2>
-          <div style={{ width: '50px', height: '4px', background: '#AC3B61', margin: '10px auto' }}></div>
+      {/* FEATURES SECTION */}
+      <section className="py-20 px-5 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-black text-[#123C69] mb-4">Tại sao chọn chúng tôi?</h2>
+          <div className="w-12 h-1 bg-[#AC3B61] mx-auto"></div>
         </div>
 
-        <Row>
-          <Col md={4} className="text-center mb-4">
-            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🧠</div>
-            <h4 style={{ fontWeight: 'bold', color: '#333' }}>Ghi nhớ lâu hơn</h4>
-            <p className="text-muted">Phương pháp lặp lại ngắt quãng giúp não bộ khắc sâu từ vựng.</p>
-          </Col>
-          <Col md={4} className="text-center mb-4">
-            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🎮</div>
-            <h4 style={{ fontWeight: 'bold', color: '#333' }}>Vừa học vừa chơi</h4>
-            <p className="text-muted">Hệ thống bài tập dạng game giúp việc học không nhàm chán.</p>
-          </Col>
-          <Col md={4} className="text-center mb-4">
-            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📱</div>
-            <h4 style={{ fontWeight: 'bold', color: '#333' }}>Mọi lúc mọi nơi</h4>
-            <p className="text-muted">Học trên điện thoại, máy tính bảng hay laptop bất cứ khi nào bạn rảnh.</p>
-          </Col>
-        </Row>
-      </Container>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {features.map((feature, idx) => (
+            <div key={idx} className="text-center p-6 rounded-lg bg-gray-50">
+              <h4 className="text-xl font-bold text-gray-800 mb-2">{feature.title}</h4>
+              <p className="text-gray-600">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </>
   );
 };

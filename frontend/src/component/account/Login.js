@@ -44,8 +44,8 @@ const Login = () => {
 
       login(result.user, result.token);
 
-      if (result.user?.id) {
-        localStorage.setItem('userId', result.user.id);
+      if (result.user?.userId) {
+        localStorage.setItem('userId', result.user.userId);
       }
 
       setTimeout(() => {
@@ -165,7 +165,7 @@ const Login = () => {
                 style={{ color: '#aaa', cursor: 'pointer', fontSize: '0.9rem' }}
                 onClick={() => navigate('/')}
               >
-                ← Quay lại trang chủ
+                Quay lại trang chủ
               </span>
             </div>
           </div>

@@ -1,9 +1,11 @@
 # English App - Monolith Backend
 
 ## Mô tả
+
 Đây là phiên bản Monolith của backend English App, gom tất cả các services (auth, content, learning) vào một ứng dụng duy nhất.
 
 ## Cấu trúc thư mục
+
 ```
 monolith/
 ├── index.js                 # Entry point
@@ -28,13 +30,16 @@ monolith/
 ## Cài đặt
 
 ### 1. Cài đặt dependencies
+
 ```bash
 cd backend/monolith
 npm install
 ```
 
 ### 2. Cấu hình môi trường
+
 Chỉnh sửa file `.env`:
+
 ```env
 DATABASE_URL="mysql://root:your_password@localhost:3306/english_app"
 JWT_SECRET="secret_key_123"
@@ -42,12 +47,14 @@ PORT=3000
 ```
 
 ### 3. Khởi tạo database
+
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
 ### 4. Chạy ứng dụng
+
 ```bash
 # Development mode
 npm run dev
@@ -59,10 +66,12 @@ npm start
 ## API Endpoints
 
 ### Auth API (`/auth`)
+
 - `POST /auth/register` - Đăng ký
 - `POST /auth/login` - Đăng nhập
 
 ### Content API (`/content`)
+
 - `GET /content/topics` - Lấy danh sách chủ đề
 - `POST /content/topics` - Tạo chủ đề mới
 - `PUT /content/topics/:id` - Cập nhật chủ đề
@@ -78,11 +87,13 @@ npm start
 - `DELETE /content/tests/:id` - Xóa bài test
 
 ### Learning API (`/api/learning`) - Yêu cầu đăng nhập
+
 - `POST /api/learning/test/submit` - Nộp bài test
 - `GET /api/learning/profile` - Lấy thông tin profile
 - `GET /api/learning/review` - Lấy danh sách từ cần ôn tập
 - `GET /api/learning/stats` - Lấy thống kê học tập
 
 ## Lưu ý
-- Frontend vẫn sử dụng port 3000 như cũ, không cần thay đổi
+
+- Frontend sử dụng port 5000 trong môi trường phát triển
 - Tất cả API endpoints giữ nguyên như phiên bản microservices

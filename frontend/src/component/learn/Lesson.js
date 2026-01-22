@@ -3,13 +3,14 @@ import { Container, Row, Col, Card, Button, Alert, Spinner } from 'react-bootstr
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
 const Lesson = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const topicId = searchParams.get('topicId');
 
   const [words, setWords] = useState([]);
-  const [topicInfo, setTopicInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,13 +24,8 @@ const Lesson = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        // Lấy từ vựng theo topic
         const wordsData = await ApiService.getVocabularyByTopic(topicId);
-        setWords(wordsData);
-
-        // Set topic info từ topicId
-        setTopicInfo({ id: topicId, name: `Chủ đề ${topicId}` });
+        setWords(Array.isArray(wordsData) ? wordsData : []);
       } catch (error) {
         console.error('Error fetching lesson data:', error);
         setError('Không thể tải bài học. Vui lòng thử lại.');
@@ -40,6 +36,14 @@ const Lesson = () => {
 
     fetchData();
   }, [topicId]);
+
+  // Phát âm thanh
+  const playAudio = (audioUrl) => {
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.play().catch(err => console.log('Audio play error:', err));
+    }
+  };
 
   if (loading) {
     return (
@@ -78,7 +82,7 @@ const Lesson = () => {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2>{topicInfo?.nameVi || topicInfo?.name || 'Bài học từ vựng'}</h2>
+          <h2>Bài học từ vựng</h2>
           <p className="text-muted mb-0">
             Có {words.length} từ vựng trong chủ đề này
           </p>
@@ -89,33 +93,99 @@ const Lesson = () => {
       </div>
 
       {/* Word List */}
-      <Row>
-        {words.map((word, index) => (
-          <Col key={word.id || index} md={6} lg={4} className="mb-3">
-            <Card className="h-100 shadow-sm">
-              <Card.Body>
-                <Card.Title className="text-primary">{word.word}</Card.Title>
-                {word.ipa && <Card.Subtitle className="mb-2 text-muted">{word.ipa}</Card.Subtitle>}
-                <Card.Text className="text-muted">{word.meaning}</Card.Text>
-                {word.exampleSentence && <Card.Text className="small fst-italic">{word.exampleSentence}</Card.Text>}
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      {words.length > 0 ? (
+        <Row>
+          {words.map((word, index) => (
+            <Col key={word.vocabId || index} md={6} lg={4} className="mb-4">
+              <Card className="h-100 shadow-sm hover-card" style={{ transition: 'transform 0.2s', cursor: 'pointer' }}>
+                {/* Hình ảnh minh họa */}
+                {word.imageUrl && (
+                  <Card.Img 
+                    variant="top" 
+                    src={word.imageUrl.startsWith('http') ? word.imageUrl : `${API_BASE_URL}${word.imageUrl}`}
+                    alt={word.word}
+                    style={{ height: '180px', objectFit: 'cover' }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <Card.Title className="text-primary mb-1" style={{ fontSize: '1.4rem' }}>
+                        {word.word}
+                      </Card.Title>
+                      {word.ipa && (
+                        <Card.Subtitle className="mb-2 text-muted">{word.ipa}</Card.Subtitle>
+                      )}
+                    </div>
+                    {/* Nút phát âm */}
+                    {word.audioUrl && (
+                      <Button 
+                        variant="outline-primary" 
+                        size="sm"
+                        className="rounded-circle p-2"
+                        onClick={(e) => { e.stopPropagation(); playAudio(word.audioUrl); }}
+                        title="Nghe phát âm"
+                      >
+                        🔊
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <Card.Text className="fw-bold text-dark mt-2" style={{ fontSize: '1.1rem' }}>
+                    {word.meaning}
+                  </Card.Text>
+                  
+                  {word.exampleSentence && (
+                    <div className="mt-3 pt-2 border-top">
+                      <Card.Text className="small fst-italic text-secondary mb-1">
+                        "{word.exampleSentence}"
+                      </Card.Text>
+                      {word.exampleMeaning && (
+                        <Card.Text className="small text-muted">
+                          → {word.exampleMeaning}
+                        </Card.Text>
+                      )}
+                    </div>
+                  )}
+                </Card.Body>
+                
+                {/* Nút luyện tập flashcard cho từ này */}
+                <Card.Footer className="bg-transparent border-0 pb-3">
+                  <Button 
+                    variant="outline-success" 
+                    size="sm" 
+                    className="w-100"
+                    onClick={() => navigate(`/flashcard?topicId=${topicId}&wordId=${word.vocabId}`)}
+                  >
+                    Luyện tập từ này
+                  </Button>
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <Alert variant="info" className="text-center">
+          <h5>Chưa có từ vựng nào</h5>
+          <p>Chủ đề này chưa có từ vựng. Vui lòng quay lại sau.</p>
+        </Alert>
+      )}
 
       {/* Action Buttons */}
       {words.length > 0 && (
-        <div className="text-center mt-5">
+        <div className="text-center mt-5 mb-4">
           <div className="d-flex justify-content-center gap-3 flex-wrap">
             <Button
               variant="primary"
+              size="lg"
               onClick={() => navigate(`/flashcard?topicId=${topicId}`)}
             >
-              Luyện tập Flashcard
+              🎴 Luyện tập Flashcard
             </Button>
             <Button
               variant="outline-secondary"
+              size="lg"
               onClick={() => navigate('/topics')}
             >
               Chọn chủ đề khác
@@ -123,6 +193,14 @@ const Lesson = () => {
           </div>
         </div>
       )}
+
+      {/* CSS for hover effect */}
+      <style>{`
+        .hover-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+      `}</style>
     </Container>
   );
 };

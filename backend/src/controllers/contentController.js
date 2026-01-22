@@ -13,9 +13,9 @@ exports.getTopics = async (req, res) => {
 
 exports.createTopic = async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, imgURL } = req.body;
         const newTopic = await prisma.topic.create({
-            data: { name }
+            data: { name, imgURL }
         });
         res.status(201).json(newTopic);
     } catch (err) {
@@ -26,10 +26,10 @@ exports.createTopic = async (req, res) => {
 exports.updateTopic = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name } = req.body;
+        const { name, imgURL } = req.body;
         const updated = await prisma.topic.update({
-            where: { id: parseInt(id) },
-            data: { name }
+            where: { topicId: parseInt(id) },
+            data: { name, imgURL }
         });
         res.json(updated);
     } catch (err) {
@@ -42,11 +42,11 @@ exports.deleteTopic = async (req, res) => {
         const id = parseInt(req.params.id);
         const tests = await prisma.test.findMany({ where: { topicId: id } });
         for (const test of tests) {
-            await prisma.question.deleteMany({ where: { testId: test.id } });
+            await prisma.question.deleteMany({ where: { testId: test.testId } });
         }
         await prisma.test.deleteMany({ where: { topicId: id } });
         await prisma.vocabulary.deleteMany({ where: { topicId: id } });
-        await prisma.topic.delete({ where: { id } });
+        await prisma.topic.delete({ where: { topicId: id } });
         res.json({ message: "Đã xóa khóa học thành công" });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -56,8 +56,7 @@ exports.deleteTopic = async (req, res) => {
 // ==================== VOCABULARY ====================
 exports.createVocabulary = async (req, res) => {
     try {
-        const { word, meaning, ipa, audioUrl, exampleSentence, topicId } = req.body;
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const { word, meaning, ipa, audioURL, imgURL, exampleSentence, exampleMeaning, topicId } = req.body;
 
         if (!topicId) {
             return res.status(400).json({ message: "Vui lòng chọn Topic ID" });
@@ -67,10 +66,11 @@ exports.createVocabulary = async (req, res) => {
             data: {
                 word,
                 meaning,
-                ipa,
-                audioUrl,
-                imageUrl,
-                exampleSentence,
+                ipa: ipa || null,
+                audioURL: audioURL || null,
+                imgURL: imgURL || null,
+                exampleSentence: exampleSentence || null,
+                exampleMeaning: exampleMeaning || null,
                 topicId: parseInt(topicId)
             }
         });
@@ -97,15 +97,21 @@ exports.getVocabularyByTopic = async (req, res) => {
 exports.updateVocabulary = async (req, res) => {
     try {
         const { id } = req.params;
-        const { word, meaning, ipa, exampleSentence, exampleMeaning, audioUrl } = req.body;
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+        const { word, meaning, ipa, exampleSentence, exampleMeaning, audioURL, imgURL } = req.body;
+
+        const updateData = {
+            word,
+            meaning,
+            ipa: ipa || null,
+            exampleSentence: exampleSentence || null,
+            exampleMeaning: exampleMeaning || null,
+            audioURL: audioURL || null,
+            imgURL: imgURL || null,
+        };
 
         const updated = await prisma.vocabulary.update({
-            where: { id: parseInt(id) },
-            data: {
-                word, meaning, ipa, exampleSentence, exampleMeaning, audioUrl,
-                ...(imageUrl && { imageUrl })
-            }
+            where: { vocabId: parseInt(id) },
+            data: updateData
         });
         res.json(updated);
     } catch (err) {
@@ -115,7 +121,7 @@ exports.updateVocabulary = async (req, res) => {
 
 exports.deleteVocabulary = async (req, res) => {
     try {
-        await prisma.vocabulary.delete({ where: { id: parseInt(req.params.id) } });
+        await prisma.vocabulary.delete({ where: { vocabId: parseInt(req.params.id) } });
         res.json({ message: "Deleted" });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -125,8 +131,12 @@ exports.deleteVocabulary = async (req, res) => {
 // ==================== TESTS ====================
 exports.getTestsByTopic = async (req, res) => {
     try {
+        const topicId = parseInt(req.params.topicId);
+        if (isNaN(topicId)) {
+            return res.status(400).json({ error: 'Invalid topicId' });
+        }
         const tests = await prisma.test.findMany({
-            where: { topicId: parseInt(req.params.topicId) },
+            where: { topicId },
             include: { questions: true }
         });
         res.json(tests);
@@ -137,8 +147,12 @@ exports.getTestsByTopic = async (req, res) => {
 
 exports.getTestById = async (req, res) => {
     try {
+        const testId = parseInt(req.params.id);
+        if (isNaN(testId)) {
+            return res.status(400).json({ error: 'Invalid testId' });
+        }
         const test = await prisma.test.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { testId },
             include: { questions: true }
         });
         if (!test) return res.status(404).json({ message: "Test not found" });
@@ -150,19 +164,22 @@ exports.getTestById = async (req, res) => {
 
 exports.createTest = async (req, res) => {
     try {
-        const { topicId, questions } = req.body;
+        const { topicId, maxScore, imgURL, title, timeLimit, questions } = req.body;
         const newTest = await prisma.test.create({
             data: {
                 topicId: parseInt(topicId),
-                maxScore: 100,
-                questions: {
+                maxScore: maxScore || 100,
+                imgURL: imgURL || null,
+                title: title || null,
+                timeLimit: timeLimit || 120, // Mặc định 2 phút
+                questions: questions ? {
                     create: questions.map(q => ({
                         content: q.content,
-                        type: "multiple-choice",
+                        type: q.type || "CHOICE",
                         answers: q.answers,
                         correctAnswer: q.correctAnswer
                     }))
-                }
+                } : undefined
             },
             include: { questions: true }
         });
@@ -175,22 +192,31 @@ exports.createTest = async (req, res) => {
 exports.updateTest = async (req, res) => {
     try {
         const testId = parseInt(req.params.id);
-        const { questions } = req.body;
+        const { maxScore, imgURL, title, timeLimit, questions } = req.body;
 
-        await prisma.question.deleteMany({ where: { testId } });
+        if (questions) {
+            await prisma.question.deleteMany({ where: { testId } });
+        }
+
+        const updateData = {};
+        if (maxScore !== undefined) updateData.maxScore = maxScore;
+        if (imgURL !== undefined) updateData.imgURL = imgURL;
+        if (title !== undefined) updateData.title = title;
+        if (timeLimit !== undefined) updateData.timeLimit = timeLimit;
+        if (questions) {
+            updateData.questions = {
+                create: questions.map(q => ({
+                    content: q.content,
+                    type: q.type || "CHOICE",
+                    answers: q.answers,
+                    correctAnswer: q.correctAnswer
+                }))
+            };
+        }
 
         const updatedTest = await prisma.test.update({
-            where: { id: testId },
-            data: {
-                questions: {
-                    create: questions.map(q => ({
-                        content: q.content,
-                        type: "multiple-choice",
-                        answers: q.answers,
-                        correctAnswer: q.correctAnswer
-                    }))
-                }
-            },
+            where: { testId },
+            data: updateData,
             include: { questions: true }
         });
         res.json(updatedTest);
@@ -202,8 +228,11 @@ exports.updateTest = async (req, res) => {
 exports.deleteTest = async (req, res) => {
     try {
         const testId = parseInt(req.params.id);
+        if (isNaN(testId)) {
+            return res.status(400).json({ error: 'Invalid testId' });
+        }
         await prisma.question.deleteMany({ where: { testId } });
-        await prisma.test.delete({ where: { id: testId } });
+        await prisma.test.delete({ where: { testId } });
         res.json({ message: "Đã xóa bài test thành công" });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -213,8 +242,12 @@ exports.deleteTest = async (req, res) => {
 // ==================== INTERNAL APIs (for Learning) ====================
 exports.getTestInternal = async (req, res) => {
     try {
+        const testId = parseInt(req.params.id);
+        if (isNaN(testId)) {
+            return res.status(400).json({ error: 'Invalid testId' });
+        }
         const test = await prisma.test.findUnique({
-            where: { id: parseInt(req.params.id) },
+            where: { testId },
             include: { questions: true }
         });
         res.json(test);
@@ -227,7 +260,7 @@ exports.getVocabsByIds = async (req, res) => {
     try {
         const { ids } = req.body;
         const vocabs = await prisma.vocabulary.findMany({
-            where: { id: { in: ids } }
+            where: { vocabId: { in: ids } }
         });
         res.json(vocabs);
     } catch (err) {

@@ -19,8 +19,8 @@ RUN npm run build
 # Cài đặt serve để chạy static files
 RUN npm install -g serve
 
-# Expose port 3000
-EXPOSE 3000
+# Expose port 5000
+EXPOSE 5000
 
 # Chạy ứng dụng
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["serve", "-s", "build", "-l", "5000"]

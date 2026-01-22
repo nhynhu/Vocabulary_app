@@ -7,81 +7,113 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 // ==================== AUTH ====================
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  password String
-  fullName String?
-  role     String  @default("USER")
+  userId    Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  fullName  String?
+  avt       String?  @db.Text
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("User")
 }
 
 // ==================== CONTENT ====================
 model Topic {
-  id           Int          @id @default(autoincrement())
+  topicId      Int          @id @default(autoincrement())
   name         String
+  imgURL       String?      @db.Text
   vocabularies Vocabulary[]
   tests        Test[]
+
+  @@map("Topic")
 }
 
 model Vocabulary {
-  id              Int     @id @default(autoincrement())
-  word            String
-  ipa             String?
-  audioUrl        String?
-  imageUrl        String?
-  meaning         String
-  exampleSentence String?
-  exampleMeaning  String?
+  vocabId         Int     @id @default(autoincrement())
   topicId         Int
-  topic           Topic   @relation(fields: [topicId], references: [id])
+  word            String
+  meaning         String
+  ipa             String?
+  audioURL        String? @db.Text
+  imgURL          String? @db.Text
+  exampleSentence String? @db.Text
+  exampleMeaning  String? @db.Text
+  topic           Topic   @relation(fields: [topicId], references: [topicId], onDelete: Cascade)
+
+  @@map("Vocabulary")
 }
 
 model Test {
-  id        Int        @id @default(autoincrement())
+  testId    Int        @id @default(autoincrement())
   topicId   Int
-  topic     Topic      @relation(fields: [topicId], references: [id])
-  questions Question[]
+  imgURL    String?    @db.Text
+  title     String?
   maxScore  Int        @default(100)
+  timeLimit Int        @default(0)
+  topic     Topic      @relation(fields: [topicId], references: [topicId], onDelete: Cascade)
+  questions Question[]
+
+  @@map("Test")
+}
+
+enum QuestionType {
+  CHOICE
+  FILL
+  MATCH
 }
 
 model Question {
-  id             Int     @id @default(autoincrement())
-  content        String
-  type           String
+  questionId     Int          @id @default(autoincrement())
+  testId         Int
+  relatedVocabId Int?
+  content        String       @db.Text
+  type           QuestionType @default(CHOICE)
   answers        Json
   correctAnswer  String
-  difficulty     Int     @default(1)
-  relatedVocabId Int?
-  testId         Int
-  test           Test    @relation(fields: [testId], references: [id])
+  test           Test         @relation(fields: [testId], references: [testId], onDelete: Cascade)
+
+  @@map("Question")
 }
 
 // ==================== LEARNING ====================
 model UserVocabulary {
-  id         Int     @id @default(autoincrement())
-  userId     Int
-  vocabId    Int
-  errorCount Int     @default(0)
-  isMarked   Boolean @default(false)
+  userVocabId    Int      @id @default(autoincrement())
+  userId         Int
+  vocabId        Int
+  isMarked       Boolean  @default(false)
+  errorCount     Int      @default(0)
+  lastReviewedAt DateTime @default(now())
 
   @@unique([userId, vocabId])
+  @@map("UserVocabulary")
 }
 
 model UserTopicProgress {
-  id          Int     @id @default(autoincrement())
-  userId      Int
-  topicId     Int
-  isCompleted Boolean @default(false)
+  userId               Int
+  topicId              Int
+  completionPercentage Int      @default(0)
+  isCompleted          Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
 
-  @@unique([userId, topicId])
+  @@id([userId, topicId])
+  @@map("UserTopicProgress")
 }
 
 model TestAttempt {
-  id               Int      @id @default(autoincrement())
-  userId           Int
-  testId           Int
-  score            Int
-  flaggedQuestions Json?
-  createdAt        DateTime @default(now())
+  testAttemptId Int     @id @default(autoincrement())
+  userId        Int
+  testId        Int
+  score         Int
+  details       Json?
+
+  @@map("TestAttempt")
 }

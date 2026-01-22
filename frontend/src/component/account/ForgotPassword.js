@@ -44,7 +44,7 @@ const ForgotPassword = () => {
                                 className="btn btn-link mt-3"
                                 onClick={() => navigate('/login')}
                             >
-                                ← Back to Login
+                                Back to Login
                             </button>
                         </form>
                     )}

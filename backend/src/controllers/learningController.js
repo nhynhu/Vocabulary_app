@@ -12,7 +12,7 @@ exports.submitTest = async (req, res) => {
 
         // Lấy test trực tiếp từ database (không cần gọi HTTP)
         const test = await prisma.test.findUnique({
-            where: { id: parseInt(testId) },
+            where: { testId: parseInt(testId) },
             include: { questions: true }
         });
 
@@ -27,7 +27,7 @@ exports.submitTest = async (req, res) => {
 
         // So khớp đáp án
         questions.forEach(q => {
-            const userAns = answers.find(a => a.questionId === q.id);
+            const userAns = answers.find(a => a.questionId === q.questionId);
             if (userAns?.userAnswer === q.correctAnswer) {
                 score += pointPerQ;
             } else {
@@ -50,7 +50,7 @@ exports.submitTest = async (req, res) => {
                 userId,
                 testId: parseInt(testId),
                 score: Math.round(score),
-                flaggedQuestions
+                details: flaggedQuestions
             }
         });
 
@@ -97,7 +97,7 @@ exports.getReviewWords = async (req, res) => {
 
         // Lấy chi tiết vocabulary trực tiếp từ database
         const vocabs = await prisma.vocabulary.findMany({
-            where: { id: { in: vocabIds } }
+            where: { vocabId: { in: vocabIds } }
         });
 
         res.json(vocabs);

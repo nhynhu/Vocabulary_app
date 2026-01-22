@@ -3,6 +3,7 @@ import { Navbar, Container, Nav, Button, Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AuthModal from '../common/AuthModal';
+import SearchBox from '../search/SearchBox';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -11,28 +12,36 @@ const Header = () => {
 
     return (
         <>
-            <Navbar expand="lg" fixed="top" className="transparent-navbar" variant="dark">
+            <Navbar expand="lg" fixed="top" className="bg-[#123C69] shadow-lg" variant="dark">
                 <Container>
-                    {/* Logo Trắng */}
-                    <Navbar.Brand onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: 40, height: 40, background: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#AC3B61', fontWeight: 'bold', fontSize: '1.2rem' }}>E</div>
-                        <span style={{ color: 'white', fontWeight: '800', letterSpacing: '1px', fontSize: '1.5rem' }}>ENGMASTER</span>
+                    <Navbar.Brand onClick={() => navigate('/')} className="flex items-center gap-2.5 cursor-pointer">
+                        <div className="flex items-center justify-center w-10 h-10 bg-white rounded-full">
+                            <span className="text-lg font-bold text-[#AC3B61]">V</span>
+                        </div>
+                        <span className="text-white font-black tracking-wider text-2xl">VOCABMAFIA</span>
                     </Navbar.Brand>
 
                     <Navbar.Toggle aria-controls="navbar-nav" />
                     <Navbar.Collapse id="navbar-nav">
+                        {/* Search Box */}
+                        <div className="ms-3">
+                            <SearchBox />
+                        </div>
+                        
                         <Nav className="ms-auto align-items-center">
                             <Nav.Link onClick={() => navigate('/')} className="nav-link-light">Trang chủ</Nav.Link>
                             <Nav.Link onClick={() => navigate('/topics')} className="nav-link-light">Học tập</Nav.Link>
                             <Nav.Link onClick={() => navigate('/test')} className="nav-link-light">Kiểm tra</Nav.Link>
+                            <Nav.Link onClick={() => navigate('/admin')} className="nav-link-light">Trang admin</Nav.Link>
 
-                            {user ? (
+                            {user && !user.isGuest ? (
                                 <Dropdown align="end" className="ms-3">
                                     <Dropdown.Toggle variant="outline-light" className="rounded-pill px-4">
                                         Hello, {user.fullName || user.name || user.email}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu>
-                                        <Dropdown.Item onClick={logout}>Đăng xuất</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => {navigate('/profile'); }}>Hồ sơ</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => { logout(); window.location.href = '/'; }}>Đăng xuất</Dropdown.Item>
                                     </Dropdown.Menu>
                                 </Dropdown>
                             ) : (
@@ -40,7 +49,7 @@ const Header = () => {
                                     className="ms-3 px-4 rounded-pill"
                                     variant="light"
                                     style={{ color: '#AC3B61', fontWeight: 'bold' }}
-                                    onClick={() => setShowAuthModal(true)}
+                                    onClick={() => navigate('/login')}
                                 >
                                     Đăng nhập
                                 </Button>

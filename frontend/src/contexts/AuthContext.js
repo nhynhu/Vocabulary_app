@@ -11,7 +11,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState({ isGuest: true, fullName: 'Guest' });
     const [loading, setLoading] = useState(true);
 
     // Load user from localStorage on app start
@@ -27,7 +27,12 @@ export const AuthProvider = ({ children }) => {
                 console.error('❌ Error parsing user data:', error);
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                // Keep guest user on error
+                setUser({ isGuest: true, fullName: 'Guest' });
             }
+        } else {
+            // Set guest user if no token/user data
+            setUser({ isGuest: true, fullName: 'Guest' });
         }
         setLoading(false);
     }, []);
@@ -52,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
-        isAuthenticated: !!user
+        isAuthenticated: !!user && !user.isGuest
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

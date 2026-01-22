@@ -14,7 +14,8 @@ const Test = () => {
       try {
         setLoading(true);
         const data = await ApiService.getAllTopics();
-        setTopics(data);
+        // Backend trả về Topic với: id, name
+        setTopics(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching topics:', error);
         setError('Không thể tải danh sách chủ đề. Vui lòng thử lại.');
@@ -47,7 +48,7 @@ const Test = () => {
     return (
       <Container className="mt-5">
         <Alert variant="danger" className="text-center">
-          <Alert.Heading>⚠️ Lỗi kết nối</Alert.Heading>
+          <Alert.Heading>Lỗi kết nối</Alert.Heading>
           <p>{error}</p>
           <Button variant="outline-danger" onClick={() => window.location.reload()}>
             Thử lại
@@ -67,17 +68,21 @@ const Test = () => {
       <Row>
         {topics.length > 0 ? (
           topics.map((topic) => (
-            <Col key={topic.id} lg={4} md={6} sm={12} className="mb-4">
-              <Card className="h-100 shadow-sm card-equal" style={{ cursor: 'pointer' }} onClick={() => handleTopicClick(topic.id)}>
+            <Col key={topic.topicId} lg={4} md={6} sm={12} className="mb-4">
+              <Card 
+                className="h-100 shadow-sm" 
+                style={{ cursor: 'pointer' }} 
+                onClick={() => handleTopicClick(topic.topicId)}
+              >
                 <Card.Img
                   variant="top"
-                  src={topic.image ? `http://localhost:3000${topic.image}` : '/image/testchoose.jpg'}
-                  onError={(e) => { e.target.src = '/image/testchoose.jpg'; }}
+                  src="/image/testchoose.jpg"
+                  onError={(e) => { e.target.src = '/image/test.png'; }}
                   style={{ height: '200px', objectFit: 'cover' }}
                 />
                 <Card.Body>
-                  <Card.Title>{topic.name}</Card.Title>
-                  <Card.Text>Làm bài test chủ đề {topic.name}</Card.Text>
+                  <Card.Title className="text-primary">{topic.name}</Card.Title>
+                  <Card.Text className="text-muted">Làm bài test chủ đề {topic.name}</Card.Text>
                   <Button variant="primary">Xem bài test</Button>
                 </Card.Body>
               </Card>
@@ -86,7 +91,7 @@ const Test = () => {
         ) : (
           <Col xs={12}>
             <Alert variant="info" className="text-center">
-              <h5>📝 Chưa có chủ đề nào</h5>
+              <h5>Chưa có chủ đề nào</h5>
               <p>Hệ thống đang được cập nhật. Vui lòng quay lại sau.</p>
             </Alert>
           </Col>

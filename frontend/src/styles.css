@@ -1,149 +1,105 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 
-:root {
-  --primary: #AC3B61;
-  /* Hồng đậm - Nút chính */
-  --hover: #cf4d7a;
-  /* Hồng sáng hơn khi hover */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html,
+  body {
+    @apply font-montserrat overflow-x-hidden bg-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+
+  button {
+    @apply transition-all duration-300;
+  }
 }
 
-body,
-html {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Montserrat', sans-serif;
-  overflow-x: hidden;
+@layer components {
+  .navbar {
+    @apply fixed top-0 w-full bg-secondary shadow-lg z-navbar;
+  }
+
+  .hero-wrapper {
+    @apply relative w-full h-screen overflow-hidden flex items-center justify-center;
+  }
+
+  .bg-carousel {
+    @apply absolute top-0 left-0 w-full h-full z-0;
+  }
+
+  .carousel-item,
+  .carousel-inner {
+    @apply h-full;
+  }
+
+  .bg-img {
+    @apply w-full h-full object-cover;
+    transform: scale(1.05);
+  }
+
+  .overlay {
+    @apply absolute top-0 left-0 w-full h-full z-10;
+    background: linear-gradient(to bottom, rgba(18, 60, 105, 0.6), rgba(0, 0, 0, 0.8));
+  }
+
+  .hero-content {
+    @apply relative z-20 text-center text-white px-4 md:px-5 max-w-3xl;
+  }
+
+  .hero-title {
+    @apply text-4xl md:text-5xl font-black uppercase tracking-wider mb-5 drop-shadow-lg;
+  }
+
+  .hero-subtitle {
+    @apply text-base md:text-lg font-normal mb-10 text-white/90 leading-relaxed;
+  }
+
+  .btn-glow {
+    @apply px-8 md:px-12 py-3 md:py-4 text-sm md:text-lg font-bold uppercase rounded-full bg-primary text-white border-none transition-all duration-300 hover:bg-[#cf4d7a] hover:shadow-2xl hover:-translate-y-1 active:translate-y-0;
+    box-shadow: 0 0 20px rgba(172, 59, 97, 0.6);
+  }
+
+  .btn-glow:hover {
+    box-shadow: 0 0 40px rgba(172, 59, 97, 0.8);
+  }
+
+  .transparent-navbar {
+    @apply fixed top-0 w-full bg-secondary/95 backdrop-blur px-4 md:px-6 py-3 md:py-4 transition-all duration-300 z-navbar;
+  }
+
+  .nav-link-light {
+    @apply text-white/80 font-bold uppercase text-xs md:text-sm mx-2 md:mx-2.5 relative hover:text-white transition-colors cursor-pointer;
+  }
+
+  .nav-link-light::after {
+    content: '';
+    @apply absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-300 w-0;
+  }
+
+  .nav-link-light:hover::after {
+    @apply w-full;
+  }
 }
 
-/* --- 1. HERO SECTION TRÀN VIỀN --- */
-.hero-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  /* Chiều cao bằng đúng màn hình thiết bị */
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+@layer utilities {
+  .container-fluid {
+    @apply w-full px-4 md:px-6 lg:px-8;
+  }
 
-/* --- 2. BACKGROUND SLIDESHOW --- */
-.bg-carousel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
 
-.carousel-item,
-.carousel-inner {
-  height: 100%;
-}
-
-.bg-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* Ảnh tự cắt để vừa khít màn hình, không bị méo */
-  transform: scale(1.05);
-  /* Zoom nhẹ để tạo chiều sâu */
-}
-
-/* --- 3. LỚP PHỦ TỐI (Làm nổi chữ) --- */
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(18, 60, 105, 0.6), rgba(0, 0, 0, 0.8));
-  z-index: 1;
-}
-
-/* --- 4. NỘI DUNG CHÍNH --- */
-.hero-content {
-  position: relative;
-  z-index: 2;
-  /* Nằm trên cùng */
-  text-align: center;
-  color: white;
-  padding: 0 20px;
-  max-width: 900px;
-  margin-top: 50px;
-  /* Đẩy xuống một chút để không đụng Header */
-}
-
-.hero-title {
-  font-size: 3.5rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 20px;
-  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-}
-
-.hero-subtitle {
-  font-size: 1.2rem;
-  font-weight: 400;
-  margin-bottom: 40px;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.6;
-}
-
-/* --- 5. BUTTONS ĐẸP --- */
-.btn-glow {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 15px 50px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 50px;
-  box-shadow: 0 0 20px rgba(172, 59, 97, 0.6);
-  /* Hiệu ứng phát sáng */
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-}
-
-.btn-glow:hover {
-  background: var(--hover);
-  transform: translateY(-3px);
-  box-shadow: 0 0 40px rgba(172, 59, 97, 0.8);
-}
-
-/* --- 6. HEADER TRONG SUỐT --- */
-.transparent-navbar {
-  background: transparent !important;
-  /* Trong suốt hoàn toàn */
-  padding: 20px 0;
-  transition: 0.3s;
-}
-
-.nav-link-light {
-  color: rgba(255, 255, 255, 0.8) !important;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.9rem;
-  margin: 0 10px;
-  position: relative;
-}
-
-.nav-link-light:hover {
-  color: white !important;
-}
-
-.nav-link-light::after {
-  content: '';
-  display: block;
-  width: 0;
-  height: 2px;
-  background: var(--primary);
-  transition: width 0.3s;
-}
-
-.nav-link-light:hover::after {
-  width: 100%;
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
 }

@@ -13,7 +13,8 @@ const Topic = () => {
       try {
         setLoading(true);
         const data = await ApiService.getAllTopics();
-        setTopics(data);
+        // Backend trả về Topic với: id, name
+        setTopics(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching topics:', error);
         setError('Không thể tải danh sách chủ đề. Vui lòng thử lại.');
@@ -69,21 +70,16 @@ const Topic = () => {
 
       <Row>
         {topics.length > 0 ? (
-          topics.map((topic) => {
-            console.log(`🔍 Topic image URL: ${topic.image}`); // SỬA LỖI: Debug URL
-
-            return (
-              <Col key={topic.id} lg={4} md={6} sm={12} className="mb-4">
-                <TopicCard
-                  title={topic.nameVi || topic.name}
-                  img={topic.image ? `http://localhost:3000${topic.image}` : 'http://localhost:3000/uploads/default-topic.jpg'}
-                  text={topic.description || `Học từ vựng về ${topic.nameVi || topic.name}`}
-                  topicId={topic.id}
-                  wordCount={topic.wordCount}
-                />
-              </Col>
-            );
-          })
+          topics.map((topic) => (
+            <Col key={topic.topicId} lg={4} md={6} sm={12} className="mb-4">
+              <TopicCard
+                title={topic.name}
+                img={topic.imgURL || "/image/topic-default.jpg"}
+                text={`Học từ vựng về ${topic.name}`}
+                topicId={topic.topicId}
+              />
+            </Col>
+          ))
         ) : (
           <Col xs={12}>
             <Alert variant="info" className="text-center">

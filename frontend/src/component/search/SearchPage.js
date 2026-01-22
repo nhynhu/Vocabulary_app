@@ -29,8 +29,8 @@ const SearchPage = () => {
 
         // Load vocabulary for each topic
         const vocabPromises = topics.map(topic =>
-          ApiService.getVocabularyByTopic(topic.id).then(vocabs =>
-            vocabs.map(v => ({ ...v, topicName: topic.name, topicId: topic.id }))
+          ApiService.getVocabularyByTopic(topic.topicId).then(vocabs =>
+            vocabs.map(v => ({ ...v, topicName: topic.name, topicId: topic.topicId }))
           ).catch(() => [])
         );
         const vocabResults = await Promise.all(vocabPromises);
@@ -68,9 +68,7 @@ const SearchPage = () => {
       if (searchType === 'all' || searchType === 'topics') {
         const topicResults = allTopics
           .filter(topic =>
-            topic.name?.toLowerCase().includes(searchTerm) ||
-            topic.nameVi?.toLowerCase().includes(searchTerm) ||
-            topic.description?.toLowerCase().includes(searchTerm)
+            topic.name?.toLowerCase().includes(searchTerm)
           )
           .map(topic => ({
             ...topic,
@@ -108,76 +106,18 @@ const SearchPage = () => {
 
   const handleResultClick = (result) => {
     if (result.type === 'topic') {
-      navigate(`/lessons?topicId=${result.id}`);
+      navigate(`/lessons?topicId=${result.topicId}`);
     } else if (result.type === 'vocabulary') {
-      navigate(`/flashcard?topicId=${result.topicId}&wordId=${result.id}`);
+      navigate(`/flashcard?topicId=${result.topicId}&wordId=${result.vocabId}`);
     }
   };
 
   return (
-    <Container className="mt-4">
-      <div className="text-center mb-4">
-        <h2>Tìm kiếm nâng cao</h2>
-        <p className="text-muted">Tìm kiếm từ vựng và chủ đề trong hệ thống</p>
-      </div>
-
-      {/* Search Form */}
-      <Card className="mb-4 shadow-sm">
-        <Card.Body>
-          <Form onSubmit={handleSearch}>
-            <Row className="align-items-end">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Từ khóa tìm kiếm</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Nhập từ cần tìm..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    disabled={loading}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={3}>
-                <Form.Group>
-                  <Form.Label>Loại tìm kiếm</Form.Label>
-                  <Form.Select
-                    value={searchType}
-                    onChange={(e) => setSearchType(e.target.value)}
-                    disabled={loading}
-                  >
-                    <option value="all">Tất cả</option>
-                    <option value="topics">Chủ đề</option>
-                    <option value="vocabulary">Từ vựng</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={3}>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={loading || !query.trim()}
-                  className="w-100"
-                >
-                  {loading ? (
-                    <>
-                      <Spinner animation="border" size="sm" className="me-2" />
-                      Đang tìm...
-                    </>
-                  ) : (
-                    '🔍 Tìm kiếm'
-                  )}
-                </Button>
-              </Col>
-            </Row>
-          </Form>
-        </Card.Body>
-      </Card>
-
+    <Container className="mt-4" style={{ maxWidth: '1200px' }}>
       {/* Error */}
       {error && (
         <Alert variant="danger" className="text-center">
-          <Alert.Heading>⚠️ Lỗi tìm kiếm</Alert.Heading>
+          <Alert.Heading>Lỗi tìm kiếm</Alert.Heading>
           <p>{error}</p>
           <Button variant="outline-danger" onClick={() => setError('')}>
             Đóng
@@ -188,10 +128,12 @@ const SearchPage = () => {
       {/* Results */}
       {hasSearched && !loading && (
         <div>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5>
-              Kết quả tìm kiếm cho "{query}"
-              <Badge bg="secondary" className="ms-2">{results.length}</Badge>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h5 style={{ color: '#123C69', fontWeight: '600', margin: 0 }}>
+              Kết quả cho "{query}"
+              <Badge bg="primary" className="ms-2" style={{ fontSize: '14px', padding: '6px 12px' }}>
+                {results.length}
+              </Badge>
             </h5>
             {results.length > 0 && (
               <Button
@@ -202,52 +144,155 @@ const SearchPage = () => {
                   setResults([]);
                   setHasSearched(false);
                 }}
+                style={{ borderRadius: '8px', fontWeight: '500' }}
               >
                 Xóa kết quả
               </Button>
             )}
           </div>
 
-          <Row>
+          <Row className="g-3">
             {results.length > 0 ? (
               results.map((result, index) => (
-                <Col key={`${result.type}-${result.id}-${index}`} lg={6} md={6} sm={12} className="mb-3">
+                <Col key={`${result.type}-${result.topicId || result.vocabId}-${index}`} lg={6} md={6} sm={12}>
                   <Card
-                    className={`h-100 shadow-sm ${result.type === 'topic' ? 'border-primary' : 'border-success'}`}
-                    style={{ cursor: 'pointer' }}
+                    className="h-100 shadow-sm"
+                    style={{ 
+                      cursor: 'pointer',
+                      borderRadius: '12px',
+                      border: 'none',
+                      transition: 'all 0.3s',
+                      borderLeft: `4px solid ${result.type === 'topic' ? '#123C69' : '#28a745'}`
+                    }}
                     onClick={() => handleResultClick(result)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}
                   >
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-start mb-2">
+                    <Card.Body style={{ padding: '20px' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
                         <Badge
                           bg={result.type === 'topic' ? 'primary' : 'success'}
-                          className="mb-2"
+                          style={{ 
+                            fontSize: '12px', 
+                            padding: '6px 12px',
+                            borderRadius: '6px'
+                          }}
                         >
-                          {result.type === 'topic' ? '📚 Chủ đề' : '📝 Từ vựng'}
+                          {result.type === 'topic' ? 'CHỦ ĐỀ' : 'TỪ VỰNG'}
                         </Badge>
-                        <small className="text-muted">Click để xem</small>
+                        <small style={{ color: '#6c757d', fontSize: '12px' }}>Click để xem →</small>
                       </div>
 
                       {result.type === 'topic' ? (
                         <>
-                          <Card.Title className="text-primary">
-                            {result.nameVi || result.name}
+                          <Card.Title style={{ 
+                            color: '#123C69', 
+                            fontSize: '20px', 
+                            fontWeight: '600',
+                            marginBottom: '12px'
+                          }}>
+                            {result.name}
                           </Card.Title>
-                          <Card.Text>
-                            {result.description}
-                          </Card.Text>
+                          {result.description && (
+                            <Card.Text style={{ 
+                              color: '#6c757d', 
+                              fontSize: '14px',
+                              marginBottom: '12px',
+                              lineHeight: '1.6'
+                            }}>
+                              {result.description}
+                            </Card.Text>
+                          )}
+                          <div style={{ 
+                            fontSize: '13px', 
+                            color: '#999',
+                            backgroundColor: '#f8f9fa',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            display: 'inline-block'
+                          }}>
+                            📚 {result.vocabularyCount || 0} từ vựng
+                          </div>
                         </>
                       ) : (
                         <>
-                          <Card.Title className="text-success">
-                            {result.word}
-                          </Card.Title>
-                          <Card.Text>
-                            <strong>Nghĩa:</strong> {result.meaning}
-                            {result.ipa && <><br /><small className="text-info">{result.ipa}</small></>}
-                            <br />
-                            <small className="text-muted">
-                              Chủ đề: {result.topicName}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                            <Card.Title style={{ 
+                              color: '#28a745', 
+                              fontSize: '20px', 
+                              fontWeight: '600',
+                              margin: 0
+                            }}>
+                              {result.word}
+                              {result.ipa && (
+                                <span style={{ 
+                                  marginLeft: '10px', 
+                                  color: '#17a2b8', 
+                                  fontSize: '14px',
+                                  fontStyle: 'italic',
+                                  fontWeight: '400'
+                                }}>
+                                  {result.ipa}
+                                </span>
+                              )}
+                            </Card.Title>
+                            {result.audioURL && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const audio = new Audio(result.audioURL);
+                                  audio.play().catch(err => console.error('Audio play error:', err));
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  fontSize: '24px',
+                                  padding: '4px',
+                                  lineHeight: 1,
+                                  transition: 'transform 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                title="Phát âm"
+                              >
+                                🔊
+                              </button>
+                            )}
+                          </div>
+                          <Card.Text style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                            <div style={{ marginBottom: '10px' }}>
+                              <strong style={{ color: '#495057' }}>Nghĩa:</strong> 
+                              <span style={{ color: '#6c757d', marginLeft: '6px' }}>{result.meaning}</span>
+                            </div>
+                            {result.exampleSentence && (
+                              <div style={{ 
+                                marginBottom: '10px',
+                                padding: '10px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '6px',
+                                borderLeft: '3px solid #28a745'
+                              }}>
+                                <strong style={{ color: '#495057', fontSize: '13px' }}>Ví dụ:</strong>
+                                <div style={{ color: '#6c757d', fontStyle: 'italic', marginTop: '4px' }}>
+                                  {result.exampleSentence}
+                                </div>
+                              </div>
+                            )}
+                            <small style={{ 
+                              color: '#6c757d',
+                              backgroundColor: '#e9ecef',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              display: 'inline-block'
+                            }}>
+                              📖 Chủ đề: {result.topicName}
                             </small>
                           </Card.Text>
                         </>
@@ -258,15 +303,22 @@ const SearchPage = () => {
               ))
             ) : (
               <Col xs={12}>
-                <Alert variant="info" className="text-center">
-                  <h5>Không tìm thấy kết quả</h5>
-                  <p>Không có kết quả nào cho từ khóa "<strong>{query}</strong>"</p>
-                  <div className="mt-3">
-                    <p className="mb-2">Gợi ý:</p>
-                    <ul className="list-unstyled">
-                      <li>• Kiểm tra chính tả</li>
-                      <li>• Thử từ khóa khác</li>
-                      <li>• Sử dụng từ ngắn hơn</li>
+                <Alert variant="info" className="text-center" style={{ 
+                  borderRadius: '12px',
+                  border: 'none',
+                  backgroundColor: '#e7f3ff',
+                  color: '#004085',
+                  padding: '40px'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🔍</div>
+                  <h5 style={{ fontWeight: '600', marginBottom: '16px' }}>Không tìm thấy kết quả</h5>
+                  <p style={{ fontSize: '15px' }}>Không có kết quả nào cho từ khóa "<strong>{query}</strong>"</p>
+                  <div className="mt-4">
+                    <p style={{ marginBottom: '12px', fontWeight: '500' }}>Gợi ý:</p>
+                    <ul className="list-unstyled" style={{ fontSize: '14px' }}>
+                      <li style={{ marginBottom: '8px' }}>• Kiểm tra chính tả</li>
+                      <li style={{ marginBottom: '8px' }}>• Thử từ khóa khác</li>
+                      <li style={{ marginBottom: '8px' }}>• Sử dụng từ ngắn gọn hơn</li>
                     </ul>
                   </div>
                 </Alert>
@@ -278,11 +330,17 @@ const SearchPage = () => {
 
       {/* Initial state */}
       {!hasSearched && !loading && (
-        <div className="text-center mt-5">
-          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🔍</div>
-          <h4>Bắt đầu tìm kiếm</h4>
-          <p className="text-muted">
-            Nhập từ khóa vào ô tìm kiếm để khám phá từ vựng và chủ đề
+        <div className="text-center mt-5" style={{ padding: '60px 20px' }}>
+          <div style={{ 
+            fontSize: '64px', 
+            marginBottom: '20px',
+            opacity: 0.3
+          }}>🔍</div>
+          <h4 style={{ color: '#123C69', fontWeight: '600', marginBottom: '12px' }}>
+            Nhập từ khóa để tìm kiếm
+          </h4>
+          <p className="text-muted" style={{ fontSize: '15px' }}>
+            Tìm kiếm từ vựng và chủ đề trong hệ thống học tập
           </p>
         </div>
       )}

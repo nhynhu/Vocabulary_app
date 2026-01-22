@@ -9,7 +9,7 @@ const AuthModal = ({ show, onHide, onLogin, featureName }) => {
             </Modal.Header>
             <Modal.Body>
                 <div className="text-center">
-                    <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🔒</div>
+
                     <h5>Please sign in to continue</h5>
                     <p className="text-muted">
                         You need to sign in to use <strong>{featureName}</strong> feature

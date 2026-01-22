@@ -23,8 +23,9 @@ const TestList = () => {
         const fetchTests = async () => {
             try {
                 setLoading(true);
+                // Backend trả về Test với: id, topicId, maxScore, questions[]
                 const data = await ApiService.getTestsByTopic(topicId);
-                setTests(data);
+                setTests(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error('Error fetching tests:', error);
                 setError('Không thể tải danh sách bài test. Vui lòng thử lại.');
@@ -53,7 +54,7 @@ const TestList = () => {
         return (
             <Container className="mt-5">
                 <Alert variant="danger" className="text-center">
-                    <Alert.Heading>⚠️ Lỗi</Alert.Heading>
+                    <Alert.Heading>Lỗi</Alert.Heading>
                     <p>{error}</p>
                     <Button variant="outline-primary" onClick={() => navigate('/test')}>
                         Quay về danh sách chủ đề
@@ -71,26 +72,26 @@ const TestList = () => {
                     <p className="text-muted">Có {tests.length} bài test trong chủ đề này</p>
                 </div>
                 <Button variant="outline-secondary" onClick={() => navigate('/test')}>
-                    ← Chọn chủ đề khác
+                    Chọn chủ đề khác
                 </Button>
             </div>
 
             <Row>
                 {tests.length > 0 ? (
                     tests.map((test, index) => (
-                        <Col key={test.id} lg={4} md={6} sm={12} className="mb-4">
+                        <Col key={test.testId} lg={4} md={6} sm={12} className="mb-4">
                             <TestCard
-                                title={`Bài test ${index + 1}`}
-                                img="/image/testchoose.jpg"
+                                title={test.title}
+                                img={test.imgURL || "/image/testchoose.jpg"}
                                 text={`${test.questions?.length || 0} câu hỏi - Điểm tối đa: ${test.maxScore || 100}`}
-                                link={`/test-start?testId=${test.id}`}
+                                link={`/test-start?testId=${test.testId}`}
                             />
                         </Col>
                     ))
                 ) : (
                     <Col xs={12}>
                         <Alert variant="info" className="text-center">
-                            <h5>📝 Chưa có bài test nào</h5>
+                            <h5>Chưa có bài test nào</h5>
                             <p>Chủ đề này chưa có bài test. Vui lòng quay lại sau.</p>
                             <Button variant="primary" onClick={() => navigate('/test')}>
                                 Chọn chủ đề khác
