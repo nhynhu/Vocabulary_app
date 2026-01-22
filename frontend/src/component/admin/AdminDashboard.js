@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import ApiService from '../../services/api';
 import AdminLayout from './AdminLayout';
@@ -9,7 +8,6 @@ import AdminLayout from './AdminLayout';
 const primaryColor = '#0f3057';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,30 +32,6 @@ const AdminDashboard = () => {
     { key: 'vocabulary', label: 'Từ vựng', value: stats?.vocabulary || 0, color: primaryColor },
     { key: 'tests', label: 'Bài kiểm tra', value: stats?.tests || 0, color: primaryColor },
     { key: 'questions', label: 'Câu hỏi', value: stats?.questions || 0, color: primaryColor },
-  ];
-
-  const managementCardsData = [
-    {
-      key: 'users',
-      title: 'Quản lý Người dùng',
-      description: 'Thêm, sửa, xóa tài khoản người dùng trong hệ thống.',
-      path: '/admin/users',
-      color: primaryColor,
-    },
-    {
-      key: 'lessons',
-      title: 'Quản lý Bài học',
-      description: 'Quản lý chủ đề và từ vựng trong các bài học.',
-      path: '/admin/lessons',
-      color: primaryColor,
-    },
-    {
-      key: 'tests',
-      title: 'Quản lý Bài kiểm tra',
-      description: 'Tạo và quản lý các bài kiểm tra, câu hỏi.',
-      path: '/admin/tests',
-      color: primaryColor,
-    },
   ];
 
   if (loading) {

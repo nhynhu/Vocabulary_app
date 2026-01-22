@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Row, Col, Card, Button, Alert, Badge } from 'react-bootstrap';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 
@@ -9,7 +9,6 @@ const SearchPage = () => {
   const initialQuery = searchParams.get('q') || '';
 
   const [query, setQuery] = useState(initialQuery);
-  const [searchType, setSearchType] = useState('all');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -47,14 +46,13 @@ const SearchPage = () => {
   // Auto search on mount if query exists and data is loaded
   useEffect(() => {
     if (initialQuery && dataLoaded) {
-      handleSearch(null, initialQuery);
+      performSearch(initialQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery, dataLoaded]);
 
-  const handleSearch = async (e, searchQuery = null) => {
-    if (e) e.preventDefault();
-
-    const searchTerm = (searchQuery || query).toLowerCase().trim();
+  const performSearch = useCallback((searchQuery) => {
+    const searchTerm = searchQuery.toLowerCase().trim();
     if (!searchTerm) return;
 
     setLoading(true);
@@ -65,44 +63,40 @@ const SearchPage = () => {
       let searchResults = [];
 
       // Search in topics
-      if (searchType === 'all' || searchType === 'topics') {
-        const topicResults = allTopics
-          .filter(topic =>
-            topic.name?.toLowerCase().includes(searchTerm)
-          )
-          .map(topic => ({
-            ...topic,
-            type: 'topic'
-          }));
-        searchResults = [...searchResults, ...topicResults];
-      }
+      const topicResults = allTopics
+        .filter(topic =>
+          topic.name?.toLowerCase().includes(searchTerm)
+        )
+        .map(topic => ({
+          ...topic,
+          type: 'topic'
+        }));
+      searchResults = [...searchResults, ...topicResults];
 
       // Search in vocabulary
-      if (searchType === 'all' || searchType === 'vocabulary') {
-        const vocabResults = allVocabulary
-          .filter(vocab =>
-            vocab.word?.toLowerCase().includes(searchTerm) ||
-            vocab.meaning?.toLowerCase().includes(searchTerm) ||
-            vocab.exampleSentence?.toLowerCase().includes(searchTerm)
-          )
-          .map(vocab => ({
-            ...vocab,
-            type: 'vocabulary',
-            english: vocab.word,
-            vietnamese: vocab.meaning,
-            topic: vocab.topicName
-          }));
-        searchResults = [...searchResults, ...vocabResults];
-      }
+      const vocabResults = allVocabulary
+        .filter(vocab =>
+          vocab.word?.toLowerCase().includes(searchTerm) ||
+          vocab.meaning?.toLowerCase().includes(searchTerm) ||
+          vocab.exampleSentence?.toLowerCase().includes(searchTerm)
+        )
+        .map(vocab => ({
+          ...vocab,
+          type: 'vocabulary',
+          english: vocab.word,
+          vietnamese: vocab.meaning,
+          topic: vocab.topicName
+        }));
+      searchResults = [...searchResults, ...vocabResults];
 
       setResults(searchResults);
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch (err) {
+      console.error('Search error:', err);
       setError('Không thể tìm kiếm. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [allTopics, allVocabulary]);
 
   const handleResultClick = (result) => {
     if (result.type === 'topic') {
@@ -222,50 +216,25 @@ const SearchPage = () => {
                         </>
                       ) : (
                         <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                            <Card.Title style={{ 
-                              color: '#28a745', 
-                              fontSize: '20px', 
-                              fontWeight: '600',
-                              margin: 0
-                            }}>
-                              {result.word}
-                              {result.ipa && (
-                                <span style={{ 
-                                  marginLeft: '10px', 
-                                  color: '#17a2b8', 
-                                  fontSize: '14px',
-                                  fontStyle: 'italic',
-                                  fontWeight: '400'
-                                }}>
-                                  {result.ipa}
-                                </span>
-                              )}
-                            </Card.Title>
-                            {result.audioURL && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const audio = new Audio(result.audioURL);
-                                  audio.play().catch(err => console.error('Audio play error:', err));
-                                }}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  fontSize: '24px',
-                                  padding: '4px',
-                                  lineHeight: 1,
-                                  transition: 'transform 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
-                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                title="Phát âm"
-                              >
-                                🔊
-                              </button>
+                          <Card.Title style={{ 
+                            color: '#28a745', 
+                            fontSize: '20px', 
+                            fontWeight: '600',
+                            marginBottom: '12px'
+                          }}>
+                            {result.word}
+                            {result.ipa && (
+                              <span style={{ 
+                                marginLeft: '10px', 
+                                color: '#17a2b8', 
+                                fontSize: '14px',
+                                fontStyle: 'italic',
+                                fontWeight: '400'
+                              }}>
+                                {result.ipa}
+                              </span>
                             )}
-                          </div>
+                          </Card.Title>
                           <Card.Text style={{ fontSize: '14px', lineHeight: '1.6' }}>
                             <div style={{ marginBottom: '10px' }}>
                               <strong style={{ color: '#495057' }}>Nghĩa:</strong> 

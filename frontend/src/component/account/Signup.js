@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { useAuth } from '../../contexts/AuthContext';
 import ApiService from '../../services/api';
+
+const GOOGLE_CLIENT_ID = '363735340206-66gn8abl1cacbqj5resrp39ugg67q14t.apps.googleusercontent.com';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,6 +19,49 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Google Login handler
+  const handleGoogleResponse = async (response) => {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const result = await ApiService.googleLogin(response.credential);
+      login(result.user, result.token);
+      if (result.user?.userId) {
+        localStorage.setItem('userId', result.user.userId);
+      }
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error('❌ Google login error:', error);
+      setError(error.message || 'Đăng ký Google thất bại. Vui lòng thử lại.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    /* global google */
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('google-signup-btn'),
+        { 
+          theme: 'outline', 
+          size: 'large', 
+          width: '100%',
+          text: 'signup_with',
+          shape: 'rectangular'
+        }
+      );
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -84,23 +131,11 @@ const Signup = () => {
   };
 
   return (
-    <div className="auth-wrapper">
-      <Row className="g-0">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff' }}>
+      <Row className="g-0 justify-content-center w-100">
 
-        {/* CỘT 1: ẢNH MINH HỌA (Ẩn trên mobile) */}
-        <Col lg={6} className="d-none d-lg-block auth-image-side">
-          <div className="auth-overlay d-flex flex-column justify-content-center px-5 text-white">
-            <div style={{ zIndex: 2 }}>
-              <h1 style={{ fontWeight: '800', fontSize: '3.5rem' }}>Tạo Tài Khoản</h1>
-              <p style={{ fontSize: '1.2rem', opacity: 0.9 }}>
-                Bắt đầu hành trình chinh phục tiếng Anh cùng EngMaster.
-              </p>
-            </div>
-          </div>
-        </Col>
-
-        {/* CỘT 2: FORM ĐĂNG KÝ */}
-        <Col lg={6} className="auth-form-side">
+        {/* FORM ĐĂNG KÝ */}
+        <Col lg={5} md={8} sm={10} className="auth-form-side">
           <div className="auth-box">
             {/* Logo Mobile */}
             <div className="text-center mb-4 cursor-pointer" onClick={() => navigate('/')}>
@@ -182,6 +217,22 @@ const Signup = () => {
                 {loading ? <><Spinner size="sm" animation="border" /> Đang xử lý...</> : 'Đăng ký'}
               </Button>
             </Form>
+
+            <div className="d-flex align-items-center my-4">
+              <hr className="flex-grow-1" />
+              <span className="px-3 text-muted" style={{ fontSize: '0.9rem' }}>hoặc</span>
+              <hr className="flex-grow-1" />
+            </div>
+
+            {/* Google Sign Up Button */}
+            <div className="mb-3">
+              <div id="google-signup-btn" style={{ display: 'flex', justifyContent: 'center' }}></div>
+              {googleLoading && (
+                <div className="text-center mt-2">
+                  <Spinner size="sm" animation="border" /> Đang xử lý...
+                </div>
+              )}
+            </div>
 
             <div className="text-center mt-4">
               <p className="text-muted">

@@ -60,6 +60,7 @@ const ApiService = {
     // Auth - Backend route: /auth/*
     login: (credentials) => makeRequest('/auth/login', 'POST', credentials),
     register: (userData) => makeRequest('/auth/register', 'POST', userData),
+    googleLogin: (credential) => makeRequest('/auth/google', 'POST', { credential }),
 
     // Topics - Backend route: /content/topics
     getAllTopics: () => makeRequest('/content/topics'),

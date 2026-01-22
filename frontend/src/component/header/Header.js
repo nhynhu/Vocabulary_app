@@ -29,10 +29,10 @@ const Header = () => {
                         </div>
                         
                         <Nav className="ms-auto align-items-center">
-                            <Nav.Link onClick={() => navigate('/')} className="nav-link-light">Trang chủ</Nav.Link>
-                            <Nav.Link onClick={() => navigate('/topics')} className="nav-link-light">Học tập</Nav.Link>
-                            <Nav.Link onClick={() => navigate('/test')} className="nav-link-light">Kiểm tra</Nav.Link>
-                            <Nav.Link onClick={() => navigate('/admin')} className="nav-link-light">Trang admin</Nav.Link>
+                            <Nav.Link onClick={() => navigate('/')} className="nav-link-light" style={{ fontSize: '14px' }}>Trang chủ</Nav.Link>
+                            <Nav.Link onClick={() => navigate('/topics')} className="nav-link-light" style={{ fontSize: '14px' }}>Học tập</Nav.Link>
+                            <Nav.Link onClick={() => navigate('/test')} className="nav-link-light" style={{ fontSize: '14px' }}>Kiểm tra</Nav.Link>
+                            <Nav.Link onClick={() => navigate('/admin')} className="nav-link-light" style={{ fontSize: '14px' }}>Trang admin</Nav.Link>
 
                             {user && !user.isGuest ? (
                                 <Dropdown align="end" className="ms-3">

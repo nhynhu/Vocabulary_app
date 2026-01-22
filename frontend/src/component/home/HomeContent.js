@@ -12,9 +12,9 @@ const HomeContent = () => {
   ];
 
   const features = [
-    { title: 'Ghi nhớ lâu hơn', desc: 'Phương pháp lặp lại ngắt quãng giúp não bộ khắc sâu từ vựng.' },
-    { title: 'Vừa học vừa chơi', desc: 'Hệ thống bài tập dạng game giúp việc học không nhàm chán.' },
-    { title: 'Mọi lúc mọi nơi', desc: 'Học trên điện thoại, máy tính bảng hay laptop bất cứ khi nào bạn rảnh.' },
+    { title: 'Ghi nhớ lâu hơn', desc: 'Sử dụng nhiều phương pháp học tập khác nhau để tăng hiệu quả ghi nhớ.' },
+    { title: 'Vừa học vừa chơi', desc: 'Hệ thống học tập dạng game giúp việc học không nhàm chán.' },
+    { title: 'Miễn phí hoàn toàn', desc: 'Sử dụng tất cả các tính năng mà không mất phí.' },
   ];
 
   return (
@@ -35,11 +35,11 @@ const HomeContent = () => {
 
         <div className="hero-content">
           <h1 className="hero-title">
-            Chinh Phục <span className="text-[#AC3B61]">Tiếng Anh</span> <br />
-            Trong Tầm Tay
+            Đừng học vẹt<br />
+            <br />
+            Hãy làm trùm tiếng Anh
           </h1>
           <p className="hero-subtitle">
-            Hơn 1000+ từ vựng, lộ trình học thông minh và hệ thống bài kiểm tra đa dạng. <br />
             Bắt đầu hành trình của bạn ngay hôm nay.
           </p>
           <div className="flex justify-center gap-4">
@@ -66,6 +66,67 @@ const HomeContent = () => {
           ))}
         </div>
       </section>
+
+      {/* FOOTER */}
+      <footer style={{ backgroundColor: '#123C69', color: 'white', padding: '50px 0 30px' }}>
+        <Container>
+          <Row>
+            {/* Logo & Giới thiệu */}
+            <Col lg={4} md={6} className="mb-4">
+              <h4 style={{ fontWeight: '800', marginBottom: '20px' }}>
+                <span style={{ color: '#AC3B61' }}>VOCAB</span>MAFIA
+              </h4>
+              <p style={{ opacity: 0.8, lineHeight: 1.8 }}>
+                Nền tảng học tiếng Anh trực tuyến hàng đầu với phương pháp học hiện đại và hiệu quả.
+              </p>
+            </Col>
+
+            {/* Liên kết */}
+            <Col lg={2} md={6} className="mb-4">
+              <h5 style={{ fontWeight: '700', marginBottom: '20px' }}>Liên kết</h5>
+              <ul style={{ listStyle: 'none', padding: 0, opacity: 0.8 }}>
+                <li style={{ marginBottom: '10px', cursor: 'pointer' }} onClick={() => navigate('/')}>Trang chủ</li>
+                <li style={{ marginBottom: '10px', cursor: 'pointer' }} onClick={() => navigate('/topics')}>Học tập</li>
+                <li style={{ marginBottom: '10px', cursor: 'pointer' }} onClick={() => navigate('/test')}>Kiểm tra</li>
+              </ul>
+            </Col>
+
+            {/* Liên hệ */}
+            <Col lg={3} md={6} className="mb-4">
+              <h5 style={{ fontWeight: '700', marginBottom: '20px' }}>Liên hệ</h5>
+              <ul style={{ listStyle: 'none', padding: 0, opacity: 0.8 }}>
+                <li style={{ marginBottom: '10px' }}>📍 123 Đường ABC, Trà Vinh</li>
+                <li style={{ marginBottom: '10px' }}>📞 0123 456 789</li>
+                <li style={{ marginBottom: '10px' }}>✉️ contact@vocabmafia.com</li>
+              </ul>
+            </Col>
+
+            {/* Mạng xã hội */}
+            <Col lg={3} md={6} className="mb-4">
+              <h5 style={{ fontWeight: '700', marginBottom: '20px' }}>Theo dõi chúng tôi</h5>
+              <div style={{ display: 'flex', gap: '15px' }}>
+                <a href="/" target="_blank" rel="noopener noreferrer" 
+                   style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', textDecoration: 'none' }}>
+
+                </a>
+                <a href="/" target="_blank" rel="noopener noreferrer"
+                   style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', textDecoration: 'none' }}>
+                  
+                </a>
+                <a href="/" target="_blank" rel="noopener noreferrer"
+                   style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', textDecoration: 'none' }}>
+                  
+                </a>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Copyright */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '30px', paddingTop: '20px', textAlign: 'center', opacity: 0.7 }}>
+            <p style={{ margin: 0 }}>© 2026 VocabMafia. All rights reserved.</p>
+          </div>
+        </Container>
+      </footer>
     </>
   );
 };

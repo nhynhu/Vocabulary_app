@@ -210,7 +210,18 @@ exports.updateQuestion = async (req, res) => {
 
 exports.deleteQuestion = async (req, res) => {
     try {
-        await prisma.question.delete({ where: { questionId: parseInt(req.params.id) } });
+        const questionId = parseInt(req.params.id);
+        
+        // Kiểm tra question có tồn tại không
+        const existingQuestion = await prisma.question.findUnique({
+            where: { questionId }
+        });
+        
+        if (!existingQuestion) {
+            return res.status(404).json({ error: "Question not found" });
+        }
+        
+        await prisma.question.delete({ where: { questionId } });
         res.json({ message: "Question deleted successfully" });
     } catch (err) {
         res.status(400).json({ error: err.message });

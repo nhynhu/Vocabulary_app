@@ -25,15 +25,29 @@ exports.submitTest = async (req, res) => {
         let wrongVocabIds = [];
         const pointPerQ = 100 / questions.length;
 
+        console.log('=== BACKEND DEBUG ===');
+        console.log('Test questions:', questions.length);
+        console.log('Received answers:', answers);
+
         // So khớp đáp án
         questions.forEach(q => {
             const userAns = answers.find(a => a.questionId === q.questionId);
-            if (userAns?.userAnswer === q.correctAnswer) {
+            const isCorrect = userAns?.userAnswer === q.correctAnswer;
+            
+            console.log(`Question ${q.questionId}:`, {
+                userAnswer: userAns?.userAnswer,
+                correctAnswer: q.correctAnswer,
+                isCorrect
+            });
+            
+            if (isCorrect) {
                 score += pointPerQ;
             } else {
                 if (q.relatedVocabId) wrongVocabIds.push(q.relatedVocabId);
             }
         });
+
+        console.log('Final score:', Math.round(score));
 
         // Cập nhật DB: Tăng errorCount cho từ sai
         for (const vId of wrongVocabIds) {

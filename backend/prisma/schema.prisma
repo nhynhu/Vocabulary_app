@@ -19,6 +19,8 @@ model User {
   password  String
   fullName  String?
   avt       String?  @db.Text
+  googleId  String?  @unique
+  avatar    String?  @db.Text
   role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -109,17 +109,28 @@ const TestStart = () => {
       let correctCount = 0;
       const results = {};
       
+      console.log('=== DEBUG SUBMIT ===');
+      console.log('Total questions:', questions.length);
+      console.log('Selected answers:', selectedAnswers);
+      
       questions.forEach(q => {
-        const userAnswerIndex = selectedAnswers[q.id];
+        const userAnswerIndex = selectedAnswers[q.questionId];
         const options = Array.isArray(q.answers) ? q.answers : JSON.parse(q.answers || '[]');
         const userAnswer = userAnswerIndex !== undefined ? options[userAnswerIndex] : null;
         const isCorrect = userAnswer === q.correctAnswer;
+        
+        console.log(`Question ${q.questionId}:`, {
+          userAnswerIndex,
+          userAnswer,
+          correctAnswer: q.correctAnswer,
+          isCorrect
+        });
         
         if (isCorrect) {
           correctCount++;
         }
         
-        results[q.id] = {
+        results[q.questionId] = {
           userAnswerIndex,
           userAnswer,
           correctAnswer: q.correctAnswer,
@@ -133,15 +144,20 @@ const TestStart = () => {
       // Tính điểm phần trăm
       const percentage = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
       
+      console.log('Correct count:', correctCount);
+      console.log('Percentage:', percentage);
+      
       // Chuẩn hóa answers theo format backend yêu cầu
       const answersArray = questions.map(q => {
-        const userAnswerIndex = selectedAnswers[q.id];
+        const userAnswerIndex = selectedAnswers[q.questionId];
         const options = Array.isArray(q.answers) ? q.answers : JSON.parse(q.answers || '[]');
         return {
-          questionId: q.id,
+          questionId: q.questionId,
           userAnswer: userAnswerIndex !== undefined ? options[userAnswerIndex] : null
         };
       });
+      
+      console.log('Answers to submit:', answersArray);
       
       // Gửi lên backend (nếu đã đăng nhập)
       try {
@@ -268,7 +284,7 @@ const TestStart = () => {
             {(() => {
               const question = questions[currentQuestion];
               const options = Array.isArray(question?.answers) ? question.answers : JSON.parse(question?.answers || '[]');
-              const qResult = questionResults[question?.id];
+              const qResult = questionResults[question?.questionId];
               
               return (
                 <>
@@ -525,9 +541,9 @@ const TestStart = () => {
                 <Button
                   size="lg"
                   className="px-4 rounded-pill"
-                  style={{ backgroundColor: '#28a745', border: 'none' }}
+                  style={{ backgroundColor: Object.keys(selectedAnswers).length < questions.length ? '#ccc' : '#28a745', border: 'none' }}
                   onClick={handleSubmit}
-                  disabled={submitting || Object.keys(selectedAnswers).length === 0}
+                  disabled={submitting || Object.keys(selectedAnswers).length < questions.length}
                 >
                   {submitting ? (
                     <>
@@ -535,7 +551,9 @@ const TestStart = () => {
                       Đang nộp bài...
                     </>
                   ) : (
-                    '✓ Nộp bài'
+                    Object.keys(selectedAnswers).length < questions.length 
+                      ? `Còn ${questions.length - Object.keys(selectedAnswers).length} câu chưa làm`
+                      : '✓ Nộp bài'
                   )}
                 </Button>
               ) : (
@@ -644,19 +662,6 @@ const TestStart = () => {
                     🚩 Xem câu gắn cờ
                   </Button>
                 )}
-                {questions.length - Object.keys(selectedAnswers).length > 0 && (
-                  <Button 
-                    size="sm"
-                    className="rounded-pill"
-                    style={{ backgroundColor: 'white', color: primaryColor, border: `1px solid ${primaryColor}` }}
-                    onClick={() => {
-                      const unansweredIndex = questions.findIndex(q => selectedAnswers[q.id] === undefined);
-                      if (unansweredIndex !== -1) setCurrentQuestion(unansweredIndex);
-                    }}
-                  >
-                    Câu chưa trả lời
-                  </Button>
-                )}
               </div>
             </Card.Body>
           </Card>
@@ -667,9 +672,9 @@ const TestStart = () => {
               <Button
                 size="lg"
                 className="w-100 rounded-pill py-3"
-                style={{ backgroundColor: primaryColor, border: 'none' }}
+                style={{ backgroundColor: Object.keys(selectedAnswers).length < questions.length ? '#ccc' : primaryColor, border: 'none' }}
                 onClick={handleSubmit}
-                disabled={submitting || Object.keys(selectedAnswers).length === 0}
+                disabled={submitting || Object.keys(selectedAnswers).length < questions.length}
               >
                 {submitting ? (
                   <>
@@ -677,14 +682,11 @@ const TestStart = () => {
                     Đang nộp bài...
                   </>
                 ) : (
-                  '✓ Nộp bài kiểm tra'
+                  Object.keys(selectedAnswers).length < questions.length 
+                    ? `Còn ${questions.length - Object.keys(selectedAnswers).length} câu chưa làm`
+                    : '✓ Nộp bài kiểm tra'
                 )}
               </Button>
-              {Object.keys(selectedAnswers).length < questions.length && (
-                <small className="text-warning d-block mt-2">
-                  ⚠️ Còn {questions.length - Object.keys(selectedAnswers).length} câu chưa trả lời
-                </small>
-              )}
             </Card.Body>
           </Card>
         </Col>
