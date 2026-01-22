@@ -76,9 +76,9 @@ const SearchPage = () => {
       // Search in vocabulary
       const vocabResults = allVocabulary
         .filter(vocab =>
-          vocab.word?.toLowerCase().includes(searchTerm) ||
-          vocab.meaning?.toLowerCase().includes(searchTerm) ||
-          vocab.exampleSentence?.toLowerCase().includes(searchTerm)
+          vocab.word?.toLowerCase().includes(searchTerm)
+          //vocab.meaning?.toLowerCase().includes(searchTerm) ||
+        //  vocab.exampleSentence?.toLowerCase().includes(searchTerm)
         )
         .map(vocab => ({
           ...vocab,
@@ -124,7 +124,7 @@ const SearchPage = () => {
         <div>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h5 style={{ color: '#123C69', fontWeight: '600', margin: 0 }}>
-              Kết quả cho "{query}"
+              Kết quả tìm kiếm
               <Badge bg="primary" className="ms-2" style={{ fontSize: '14px', padding: '6px 12px' }}>
                 {results.length}
               </Badge>

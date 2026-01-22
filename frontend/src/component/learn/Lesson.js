@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner } from 'react-bootstrap';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import ApiService from '../../services/api';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
@@ -8,11 +9,13 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 const Lesson = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const topicId = searchParams.get('topicId');
 
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState(null);
 
   useEffect(() => {
     if (!topicId) {
@@ -24,6 +27,23 @@ const Lesson = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        
+        // Lấy tiến trình học nếu user đã đăng nhập
+        if (user) {
+          try {
+            const progressData = await ApiService.getTopicProgress(topicId);
+            setProgress(progressData);
+            
+            // Nếu chưa hoàn thành lần đầu, redirect về flashcard
+            if (!progressData.isCompleted) {
+              navigate(`/flashcard?topicId=${topicId}`);
+              return;
+            }
+          } catch (err) {
+            console.log('Could not fetch progress:', err);
+          }
+        }
+        
         const wordsData = await ApiService.getVocabularyByTopic(topicId);
         setWords(Array.isArray(wordsData) ? wordsData : []);
       } catch (error) {
@@ -35,7 +55,7 @@ const Lesson = () => {
     };
 
     fetchData();
-  }, [topicId]);
+  }, [topicId, user, navigate]);
 
   // Phát âm thanh
   const playAudio = (audioUrl) => {
@@ -85,11 +105,32 @@ const Lesson = () => {
           <h2>Bài học từ vựng</h2>
           <p className="text-muted mb-0">
             Có {words.length} từ vựng trong chủ đề này
+            {user && progress?.isCompleted && (
+              <span className="text-success ms-2">✓ Đã hoàn thành lần đầu</span>
+            )}
           </p>
         </div>
-        <Button variant="outline-secondary" onClick={() => navigate('/topics')}>
-          Chọn chủ đề khác
-        </Button>
+        {/* Action Buttons */}
+      {words.length > 0 && (
+        <div className="text-center mt-5 mb-4">
+          <div className="d-flex justify-content-center gap-3 flex-wrap">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => navigate(`/flashcard?topicId=${topicId}`)}
+            >
+              🎴 Luyện tập Flashcard
+            </Button>
+            <Button
+              variant="outline-secondary"
+              size="lg"
+              onClick={() => navigate('/topics')}
+            >
+              Chọn chủ đề khác
+            </Button>
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Word List */}
@@ -170,28 +211,6 @@ const Lesson = () => {
           <h5>Chưa có từ vựng nào</h5>
           <p>Chủ đề này chưa có từ vựng. Vui lòng quay lại sau.</p>
         </Alert>
-      )}
-
-      {/* Action Buttons */}
-      {words.length > 0 && (
-        <div className="text-center mt-5 mb-4">
-          <div className="d-flex justify-content-center gap-3 flex-wrap">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => navigate(`/flashcard?topicId=${topicId}`)}
-            >
-              🎴 Luyện tập Flashcard
-            </Button>
-            <Button
-              variant="outline-secondary"
-              size="lg"
-              onClick={() => navigate('/topics')}
-            >
-              Chọn chủ đề khác
-            </Button>
-          </div>
-        </div>
       )}
 
       {/* CSS for hover effect */}

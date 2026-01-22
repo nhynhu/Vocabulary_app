@@ -63,8 +63,8 @@ const SearchBox = () => {
             const vocabResults = allVocabs
                 .filter(vocab =>
                     vocab.word?.toLowerCase().includes(searchTerm) ||
-                    vocab.meaning?.toLowerCase().includes(searchTerm) ||
-                    vocab.exampleSentence?.toLowerCase().includes(searchTerm)
+                    vocab.meaning?.toLowerCase().includes(searchTerm)
+                   // vocab.exampleSentence?.toLowerCase().includes(searchTerm)
                 )
                 .slice(0, 5)
                 .map(vocab => ({

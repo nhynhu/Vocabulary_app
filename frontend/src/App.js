@@ -15,6 +15,9 @@ import ForgotPassword from './component/account/ForgotPassword';
 import VerifyEmail from './component/account/VerifyEmail';
 import ResetPassword from './component/account/ResetPassword';
 import Profile from './component/account/Profile';
+import AccountInfo from './component/account/AccountInfo';
+import LearningStats from './component/account/LearningStats';
+import ReviewWords from './component/account/ReviewWords';
 // Admin pages
 import AdminDashboard from './component/admin/AdminDashboard';
 import AdminUsers from './component/admin/AdminUsers';
@@ -55,6 +58,9 @@ const AppLayout = () => {
           <Route path="/dotests" element={<TestStart />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/account-info" element={<AccountInfo />} />
+          <Route path="/learning-stats" element={<LearningStats />} />
+          <Route path="/review-words" element={<ReviewWords />} />
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />

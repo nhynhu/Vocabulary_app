@@ -103,7 +103,7 @@ exports.getReviewWords = async (req, res) => {
         const list = await prisma.userVocabulary.findMany({
             where: {
                 userId,
-                OR: [{ errorCount: { gt: 2 } }, { isMarked: true }]
+                OR: [{ errorCount: { gt: 0 } }, { isMarked: true }]
             }
         });
 
@@ -114,7 +114,17 @@ exports.getReviewWords = async (req, res) => {
             where: { vocabId: { in: vocabIds } }
         });
 
-        res.json(vocabs);
+        // Kết hợp vocabulary với errorCount
+        const reviewWords = vocabs.map(vocab => {
+            const userVocab = list.find(uv => uv.vocabId === vocab.vocabId);
+            return {
+                ...vocab,
+                errorCount: userVocab?.errorCount || 0,
+                isMarked: userVocab?.isMarked || false
+            };
+        });
+
+        res.json(reviewWords);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -154,5 +164,165 @@ exports.getProfileStats = async (req, res) => {
     } catch (err) {
         console.error("Lỗi lấy stats:", err);
         res.status(500).json({ message: err.message });
+    }
+};
+
+// LẤY TIẾN TRÌNH HỌC CỦA USER CHO TOPIC
+exports.getTopicProgress = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { topicId } = req.params;
+
+        const progress = await prisma.userTopicProgress.findUnique({
+            where: {
+                userId_topicId: {
+                    userId,
+                    topicId: parseInt(topicId)
+                }
+            }
+        });
+
+        // Lấy số từ vựng thực tế của topic
+        const totalWords = await prisma.vocabulary.count({
+            where: { topicId: parseInt(topicId) }
+        });
+
+        // Nếu chưa có tiến trình, trả về mặc định
+        if (!progress) {
+            return res.json({
+                completionPercentage: 0,
+                isCompleted: false,
+                currentWordIndex: 0,
+                totalWords
+            });
+        }
+
+        // Tính current word index từ completionPercentage dựa trên số từ thực tế
+        const currentWordIndex = Math.floor((progress.completionPercentage / 100) * totalWords);
+
+        res.json({
+            completionPercentage: progress.completionPercentage,
+            isCompleted: progress.isCompleted,
+            currentWordIndex: Math.min(currentWordIndex, totalWords - 1),
+            totalWords
+        });
+    } catch (err) {
+        console.error('Get topic progress error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// CẬP NHẬT TIẾN TRÌNH HỌC
+exports.updateTopicProgress = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { topicId } = req.params;
+        const { currentWordIndex, totalWords } = req.body;
+
+        // Tính completionPercentage từ currentWordIndex
+        // currentWordIndex là số từ đã học (0-based index)
+        const completionPercentage = Math.round(((currentWordIndex + 1) / totalWords) * 100);
+        const isCompleted = completionPercentage >= 100;
+
+        const progress = await prisma.userTopicProgress.upsert({
+            where: {
+                userId_topicId: {
+                    userId,
+                    topicId: parseInt(topicId)
+                }
+            },
+            update: {
+                completionPercentage: Math.min(completionPercentage, 100),
+                isCompleted,
+                updatedAt: new Date()
+            },
+            create: {
+                userId,
+                topicId: parseInt(topicId),
+                completionPercentage: Math.min(completionPercentage, 100),
+                isCompleted
+            }
+        });
+
+        res.json({
+            success: true,
+            progress
+        });
+    } catch (err) {
+        console.error('Update topic progress error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// CẬP NHẬT THÔNG TIN PROFILE
+exports.updateProfile = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { fullName, currentPassword, newPassword } = req.body;
+
+        // Lấy thông tin user hiện tại
+        const user = await prisma.user.findUnique({
+            where: { userId }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Chuẩn bị dữ liệu update
+        const updateData = {};
+
+        // Cập nhật tên nếu có
+        if (fullName && fullName !== user.fullName) {
+            updateData.fullName = fullName;
+        }
+
+        // Cập nhật mật khẩu nếu có
+        if (currentPassword && newPassword) {
+            // Kiểm tra mật khẩu cũ
+            if (!user.password) {
+                return res.status(400).json({ error: 'Cannot change password for Google accounts' });
+            }
+
+            const bcrypt = require('bcryptjs');
+            const isValid = await bcrypt.compare(currentPassword, user.password);
+            
+            if (!isValid) {
+                return res.status(400).json({ error: 'Current password is incorrect' });
+            }
+
+            // Hash mật khẩu mới
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            updateData.password = hashedPassword;
+        }
+
+        // Nếu không có gì để update
+        if (Object.keys(updateData).length === 0) {
+            return res.json({
+                success: true,
+                message: 'No changes to update'
+            });
+        }
+
+        // Cập nhật database
+        const updatedUser = await prisma.user.update({
+            where: { userId },
+            data: updateData,
+            select: {
+                userId: true,
+                email: true,
+                fullName: true,
+                avatar: true
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: updatedUser
+        });
+    } catch (err) {
+        console.error('Update profile error:', err);
+        res.status(500).json({ error: err.message });
     }
 };

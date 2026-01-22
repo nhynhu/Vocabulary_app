@@ -7,7 +7,8 @@ const TopicCard = ({ title, img, text, topicId }) => {
 
   const handleLearnClick = () => {
     if (topicId) {
-      navigate(`/lessons?topicId=${topicId}`);
+      // Luôn chuyển về flashcard để component đó xử lý redirect
+      navigate(`/flashcard?topicId=${topicId}`);
     }
   };
 

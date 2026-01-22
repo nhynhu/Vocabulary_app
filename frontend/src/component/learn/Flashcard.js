@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Alert, Spinner, ProgressBar } from 'react-bootstrap';
+import { Button, Alert, Spinner, ProgressBar, Modal } from 'react-bootstrap';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import ApiService from '../../services/api';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
@@ -8,6 +9,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 const Flashcard = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const topicId = searchParams.get('topicId');
   const wordId = searchParams.get('wordId');
 
@@ -17,6 +19,8 @@ const Flashcard = () => {
   const [topicInfo, setTopicInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState(null);
+  const [isFirstTimeComplete, setIsFirstTimeComplete] = useState(false);
 
   useEffect(() => {
     if (!topicId) {
@@ -28,18 +32,45 @@ const Flashcard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(''); // Reset error
 
         // Lấy từ vựng theo topic
         const wordsData = await ApiService.getVocabularyByTopic(topicId);
-        console.log('Flashcard words data:', wordsData); // Debug: kiểm tra dữ liệu
-        if (wordsData.length > 0) {
-          console.log('First word audio:', wordsData[0].audioURL); // Debug: kiểm tra audioURL
+        console.log('Flashcard words data:', wordsData);
+        
+        if (!wordsData || wordsData.length === 0) {
+          setError('Chủ đề này chưa có từ vựng');
+          setLoading(false);
+          return;
         }
+        
         setWords(wordsData);
         setTopicInfo({ id: topicId, name: `Chủ đề ${topicId}` });
 
-        // Nếu có wordId, set flashcard về đúng vị trí từ đó
-        if (wordId) {
+        // Lấy tiến trình học nếu user đã đăng nhập
+        if (user) {
+          try {
+            const progressData = await ApiService.getTopicProgress(topicId);
+            console.log('Progress data:', progressData);
+            setProgress(progressData);
+            
+            // Nếu có wordId, ưu tiên set theo wordId
+            // Ngược lại, set theo tiến trình học
+            if (wordId) {
+              const idx = wordsData.findIndex(w => String(w.vocabId) === String(wordId));
+              if (idx >= 0) setCurrentIndex(idx);
+            } else if (!progressData.isCompleted && progressData.currentWordIndex > 0) {
+              // Chỉ set tiến trình nếu chưa hoàn thành lần đầu
+              // Validate index không vượt quá số từ hiện có
+              const validIndex = Math.min(progressData.currentWordIndex, wordsData.length - 1);
+              setCurrentIndex(Math.max(0, validIndex));
+            }
+          } catch (err) {
+            console.error('Could not fetch progress:', err);
+            // Không set error, chỉ log - vẫn cho phép học flashcard
+          }
+        } else if (wordId) {
+          // Guest mode với wordId
           const idx = wordsData.findIndex(w => String(w.vocabId) === String(wordId));
           if (idx >= 0) setCurrentIndex(idx);
         }
@@ -52,25 +83,63 @@ const Flashcard = () => {
     };
 
     fetchData();
-  }, [topicId, wordId]);
+  }, [topicId, wordId, user]);
 
   const handleNext = () => {
     setFlipped(false);
-    if (currentIndex < words.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      // Quay về thẻ đầu tiên
-      setCurrentIndex(0);
+    const nextIndex = currentIndex < words.length - 1 ? currentIndex + 1 : 0;
+    setCurrentIndex(nextIndex);
+    
+    // Cập nhật tiến trình nếu user đã đăng nhập và chưa hoàn thành lần đầu
+    if (user && progress && !progress.isCompleted && nextIndex > currentIndex) {
+      updateProgress(nextIndex);
     }
   };
 
   const handlePrevious = () => {
     setFlipped(false);
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else {
-      // Quay về thẻ cuối cùng
-      setCurrentIndex(words.length - 1);
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : words.length - 1;
+    setCurrentIndex(prevIndex);
+  };
+  
+  // Hàm cập nhật tiến trình
+  const updateProgress = async (newIndex) => {
+    if (!user || !topicId) return;
+    
+    try {
+      await ApiService.updateTopicProgress(topicId, {
+        currentWordIndex: newIndex,
+        totalWords: words.length
+      });
+      
+      // Nếu đã học xong tất cả từ (đến từ cuối cùng)
+      if (newIndex === words.length - 1) {
+        setIsFirstTimeComplete(true);
+      }
+    } catch (err) {
+      console.error('Error updating progress:', err);
+    }
+  };
+  
+  // Hàm hoàn thành học lần đầu
+  const handleCompleteFirstTime = async () => {
+    if (!user || !topicId) return;
+    
+    try {
+      await ApiService.updateTopicProgress(topicId, {
+        currentWordIndex: words.length - 1,
+        totalWords: words.length
+      });
+      
+      // Reload progress để cập nhật isCompleted
+      const updatedProgress = await ApiService.getTopicProgress(topicId);
+      setProgress(updatedProgress);
+      setIsFirstTimeComplete(false);
+      
+      alert('🎉 Chúc mừng! Bạn đã hoàn thành bài học lần đầu. Giờ bạn có thể xem danh sách từ vựng.');
+    } catch (err) {
+      console.error('Error completing lesson:', err);
+      alert('Có lỗi khi hoàn thành bài học');
     }
   };
 
@@ -122,7 +191,20 @@ const Flashcard = () => {
   }
 
   const currentWord = words[currentIndex];
-  const progress = ((currentIndex + 1) / words.length) * 100;
+  
+  // Safety check: nếu currentWord undefined, return loading
+  if (!currentWord) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+          <p className="mt-4 text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const currentProgress = ((currentIndex + 1) / words.length) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -135,26 +217,52 @@ const Flashcard = () => {
             </h2>
             <p className="text-gray-500">
               Thẻ {currentIndex + 1} / {words.length}
+              {user && progress && !progress.isCompleted && (
+                <span className="text-warning ms-2">🔄 Học lần đầu</span>
+              )}
             </p>
           </div>
-          <Button 
-            variant="outline-secondary" 
-            onClick={() => navigate(`/lessons?topicId=${topicId}`)}
-            className="rounded-lg"
-          >
-            Quay về bài học
-          </Button>
+          <div className="d-flex gap-3 flex-wrap align-items-center">
+            {/* Chỉ hiện nút "Xem danh sách từ" nếu đã hoàn thành lần đầu */}
+            {user && progress?.isCompleted && (
+              <Button 
+                size="lg"
+                onClick={() => navigate(`/lessons?topicId=${topicId}`)}
+                className="rounded-3 px-4 py-2 fw-semibold"
+                style={{ 
+                  backgroundColor: '#2563eb',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '16px'
+                }}
+              >
+                 Xem danh sách từ
+              </Button>
+            )}
+            <Button 
+              size="lg"
+              onClick={() => navigate('/topics')}
+              className="rounded-3 px-4 py-2 fw-semibold"
+              style={{
+                backgroundColor: 'white',
+                border: '2px solid #dee2e6',
+                color: '#495057',
+                fontSize: '16px'
+              }}
+            >
+              Chọn chủ đề khác
+            </Button>
+          </div>
         </div>
 
         {/* Progress */}
         <ProgressBar 
-          now={progress} 
-          label={`${Math.round(progress)}%`} 
+          now={currentProgress} 
+          label={`${Math.round(currentProgress)}%`} 
           className="mb-6 h-3 rounded-full" 
           style={{ backgroundColor: '#e2e8f0' }}
-        >
-          <ProgressBar now={progress} style={{ backgroundColor: '#123C69' }} />
-        </ProgressBar>
+          variant="primary"
+        />
 
         {/* Flashcard - Flip Animation */}
         <div className="flex justify-center mb-8">
@@ -182,12 +290,12 @@ const Flashcard = () => {
                     className="md:w-2/5 flex items-center justify-center p-6"
                     style={{ backgroundColor: '#f0f4f8', minHeight: '200px' }}
                   >
-                    {(currentWord.imageURL || currentWord.imageUrl) ? (
+                    {(currentWord?.imageURL || currentWord?.imageUrl || currentWord?.imgURL) ? (
                       <img 
-                        src={(currentWord.imageURL || currentWord.imageUrl).startsWith('http') 
-                          ? (currentWord.imageURL || currentWord.imageUrl) 
-                          : `${API_BASE_URL}${currentWord.imageURL || currentWord.imageUrl}`}
-                        alt={currentWord.word}
+                        src={(currentWord.imageURL || currentWord.imageUrl || currentWord.imgURL).startsWith('http') 
+                          ? (currentWord.imageURL || currentWord.imageUrl || currentWord.imgURL) 
+                          : `${API_BASE_URL}${currentWord.imageURL || currentWord.imageUrl || currentWord.imgURL}`}
+                        alt={currentWord.word || 'Word'}
                         style={{ 
                           maxWidth: '100%', 
                           maxHeight: '250px', 
@@ -213,24 +321,22 @@ const Flashcard = () => {
                     
                     {/* Từ vựng */}
                     <h1 className="text-3xl md:text-4xl font-bold text-secondary mb-2">
-                      {currentWord.word}
+                      {currentWord?.word || ''}
                     </h1>
                     
                     {/* Phiên âm */}
-                    {currentWord.ipa && (
+                    {currentWord?.ipa && (
                       <p className="text-lg text-gray-500 mb-3">{currentWord.ipa}</p>
                     )}
                     
-                    {/* Nút phát âm - Debug */}
-                    {console.log('Current word audioURL:', currentWord.audioURL)}
-                    {(currentWord.audioURL || currentWord.audioUrl) && (
+                    {/* Nút phát âm */}
+                    {(currentWord?.audioURL || currentWord?.audioUrl) && (
                       <Button 
                         variant="outline-primary" 
                         size="sm"
                         className="mb-4 w-fit"
                         onClick={(e) => { 
                           e.stopPropagation(); 
-                          console.log('Playing audio:', currentWord.audioURL || currentWord.audioUrl);
                           playAudio(currentWord.audioURL || currentWord.audioUrl); 
                         }}
                         title="Nghe phát âm"
@@ -245,7 +351,7 @@ const Flashcard = () => {
                     )}
                     
                     {/* Câu ví dụ */}
-                    {currentWord.exampleSentence && (
+                    {currentWord?.exampleSentence && (
                       <div className="mt-2 pt-3 border-t border-gray-200">
                         <p className="text-sm text-gray-400 mb-1">Câu ví dụ:</p>
                         <p className="text-lg italic text-gray-700">
@@ -254,7 +360,7 @@ const Flashcard = () => {
                       </div>
                     )}
                     
-                    <p className="text-gray-400 text-sm mt-4">💡 Nhấn để xem nghĩa và dịch câu ví dụ</p>
+                    <p className="text-gray-400 text-sm mt-4">💡 Nhấn để lật thẻ</p>
                   </div>
                 </div>
               </div>
@@ -273,11 +379,11 @@ const Flashcard = () => {
                 
                 {/* Nghĩa của từ */}
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-                  {currentWord.meaning}
+                  {currentWord?.meaning || ''}
                 </h1>
                 
                 {/* Dịch câu ví dụ */}
-                {currentWord.exampleMeaning && (
+                {currentWord?.exampleMeaning && (
                   <div className="mt-4 pt-4 border-t border-gray-200 w-full max-w-lg">
                     <p className="text-sm text-gray-500 mb-2">Dịch câu ví dụ:</p>
                     <p className="text-xl text-gray-700 italic">
@@ -286,7 +392,7 @@ const Flashcard = () => {
                   </div>
                 )}
                 
-                <p className="text-gray-400 text-sm mt-6">🔄 Nhấn để quay lại</p>
+                <p className="text-gray-400 text-sm mt-6">💡 Nhấn để lật thẻ</p>
               </div>
             </div>
           </div>
@@ -304,7 +410,7 @@ const Flashcard = () => {
           </Button>
 
           {/* Nút phát âm riêng */}
-          {(currentWord.audioURL || currentWord.audioUrl) && (
+          {(currentWord?.audioURL || currentWord?.audioUrl) && (
             <Button
               onClick={() => playAudio(currentWord.audioURL || currentWord.audioUrl)}
               size="lg"
@@ -325,6 +431,44 @@ const Flashcard = () => {
             Thẻ tiếp →
           </Button>
         </div>
+
+        {/* Nút hoàn thành học lần đầu */}
+        <Modal 
+          show={user && isFirstTimeComplete && !progress?.isCompleted} 
+          onHide={() => setIsFirstTimeComplete(false)}
+          centered
+          backdrop="static"
+        >
+          <Modal.Header closeButton style={{ border: 'none', paddingBottom: 0 }}>
+          </Modal.Header>
+          <Modal.Body className="text-center py-5">
+            <div style={{ fontSize: '80px', marginBottom: '20px' }}>🎉</div>
+            <h2 className="mb-3" style={{ color: '#28a745', fontWeight: 'bold' }}>Xuất sắc!</h2>
+            <p className="mb-4" style={{ fontSize: '18px', color: '#6c757d' }}>
+              Bạn đã xem hết tất cả các flashcard.<br />
+              Hãy hoàn thành bài học để mở khóa danh sách từ vựng!
+            </p>
+            <div className="d-flex gap-3 justify-content-center">
+              <Button 
+                variant="success" 
+                size="lg" 
+                onClick={handleCompleteFirstTime}
+                className="px-5 py-3 fw-bold"
+                style={{ fontSize: '16px' }}
+              >
+                ✓ Hoàn thành bài học
+              </Button>
+              <Button 
+                variant="outline-secondary" 
+                size="lg" 
+                onClick={() => setIsFirstTimeComplete(false)}
+                className="px-5 py-3"
+              >
+                Để sau
+              </Button>
+            </div>
+          </Modal.Body>
+        </Modal>
       </div>
     </div>
   );

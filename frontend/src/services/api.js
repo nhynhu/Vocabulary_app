@@ -87,8 +87,13 @@ const ApiService = {
     // Learning - Backend route: /api/learning/*
     submitTest: (submission) => makeRequest('/api/learning/test/submit', 'POST', submission),
     getProfile: () => makeRequest('/api/learning/profile'),
+    updateProfile: (data) => makeRequest('/api/learning/profile', 'PUT', data),
     getProfileStats: () => makeRequest('/api/learning/stats'),
     getReviewWords: () => makeRequest('/api/learning/review'),
+    
+    // Topic Progress
+    getTopicProgress: (topicId) => makeRequest(`/api/learning/topics/${topicId}/progress`),
+    updateTopicProgress: (topicId, data) => makeRequest(`/api/learning/topics/${topicId}/progress`, 'PUT', data),
 
     // ==================== ADMIN APIs ====================
     // Stats
